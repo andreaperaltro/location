@@ -1,25 +1,68 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+let supabaseClient: SupabaseClient | null = null;
+let supabaseAdminClient: SupabaseClient | null = null;
 
-// Client-side Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+function getSupabaseConfig() {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Server-side admin client with service role key (for server-only operations)
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false,
-  },
-});
+  if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
+    throw new Error('Missing Supabase environment variables. Please check your .env file.');
+  }
+
+  return { supabaseUrl, supabaseAnonKey, supabaseServiceKey };
+}
+
+// Client-side Supabase client (lazy initialization)
+export function getSupabase() {
+  if (!supabaseClient) {
+    const { supabaseUrl, supabaseAnonKey } = getSupabaseConfig();
+    supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+  }
+  return supabaseClient;
+}
+
+// Server-side admin client (lazy initialization)
+export function getSupabaseAdmin() {
+  if (!supabaseAdminClient) {
+    const { supabaseUrl, supabaseServiceKey } = getSupabaseConfig();
+    supabaseAdminClient = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
+  }
+  return supabaseAdminClient;
+}
+
+// Legacy exports for backward compatibility (only when env vars are available)
+let supabase: SupabaseClient;
+let supabaseAdmin: SupabaseClient;
+
+try {
+  supabase = getSupabase();
+  supabaseAdmin = getSupabaseAdmin();
+} catch (error) {
+  // During build time, environment variables might not be available
+  // Create placeholder clients that will throw errors when used
+  supabase = null as any;
+  supabaseAdmin = null as any;
+}
+
+export { supabase, supabaseAdmin };
 
 // Bucket management
 export const BUCKET_NAME = 'photos';
 
 export async function ensureBucketExists() {
   try {
+    if (!supabaseAdmin) {
+      throw new Error('Supabase admin client not initialized');
+    }
+    
     // Check if bucket exists
     const { data: buckets, error: listError } = await supabaseAdmin.storage.listBuckets();
     
@@ -58,6 +101,10 @@ export async function ensureBucketExists() {
 // Upload a photo file to Supabase storage
 export async function uploadPhoto(file: File, path: string): Promise<{ url: string; error?: string }> {
   try {
+    if (!supabase) {
+      throw new Error('Supabase client not initialized');
+    }
+    
     // Ensure bucket exists
     const bucketExists = await ensureBucketExists();
     if (!bucketExists) {
@@ -65,7 +112,7 @@ export async function uploadPhoto(file: File, path: string): Promise<{ url: stri
     }
 
     // Upload file
-    const { data, error } = await supabaseAdmin.storage
+    const { data, error } = await supabase.storage
       .from(BUCKET_NAME)
       .upload(path, file, {
         cacheControl: '3600',
@@ -92,6 +139,10 @@ export async function uploadPhoto(file: File, path: string): Promise<{ url: stri
 // Get a signed URL for private file access
 export async function getSignedUrl(path: string, expiresIn: number = 3600): Promise<string> {
   try {
+    if (!supabaseAdmin) {
+      throw new Error('Supabase admin client not initialized');
+    }
+    
     const { data, error } = await supabaseAdmin.storage
       .from(BUCKET_NAME)
       .createSignedUrl(path, expiresIn);
@@ -111,6 +162,10 @@ export async function getSignedUrl(path: string, expiresIn: number = 3600): Prom
 // Delete a file from storage
 export async function deleteFile(path: string): Promise<{ success: boolean; error?: string }> {
   try {
+    if (!supabaseAdmin) {
+      throw new Error('Supabase admin client not initialized');
+    }
+    
     const { error } = await supabaseAdmin.storage
       .from(BUCKET_NAME)
       .remove([path]);
@@ -130,6 +185,9 @@ export async function deleteFile(path: string): Promise<{ success: boolean; erro
 // List files in a folder
 export async function listFiles(folderPath: string = ''): Promise<{ data: any[]; error?: string }> {
   try {
+    if (!supabaseAdmin) {
+      throw new Error('Supabase admin client not initialized');
+    }
     const { data, error } = await supabaseAdmin.storage
       .from(BUCKET_NAME)
       .list(folderPath);
@@ -149,6 +207,10 @@ export async function listFiles(folderPath: string = ''): Promise<{ data: any[];
 // Get file info
 export async function getFileInfo(path: string): Promise<{ data: any; error?: string }> {
   try {
+    if (!supabaseAdmin) {
+      throw new Error('Supabase admin client not initialized');
+    }
+    
     const { data, error } = await supabaseAdmin.storage
       .from(BUCKET_NAME)
       .list(path.split('/').slice(0, -1).join('/'), {

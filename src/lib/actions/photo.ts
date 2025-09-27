@@ -1,6 +1,6 @@
 'use server';
 
-import { getServerSession } from 'next-auth';
+import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { PrismaClient } from '@prisma/client';
 import { getSignedUrl } from '@/lib/supabase';
@@ -30,7 +30,7 @@ export async function processPhotoUpload(
 ): Promise<PhotoUploadResult> {
   try {
     // Check authentication
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions) as any;
     if (!session?.user?.id) {
       return { success: false, error: 'Unauthorized' };
     }
@@ -135,7 +135,7 @@ export async function processPhotoUpload(
 
 export async function deletePhoto(photoId: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions) as any;
     if (!session?.user?.id) {
       return { success: false, error: 'Unauthorized' };
     }
@@ -183,7 +183,7 @@ export async function reorderPhotos(
   photoIds: string[]
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions) as any;
     if (!session?.user?.id) {
       return { success: false, error: 'Unauthorized' };
     }

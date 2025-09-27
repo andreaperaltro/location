@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { ArrowLeft, Save, Plus, Trash2, Eye, Camera, MapPin, FileText } from 'lucide-react';
@@ -39,7 +39,7 @@ interface ProposalItem {
   order: number;
 }
 
-export default function NewProposalPage() {
+function NewProposalContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
@@ -467,5 +467,13 @@ export default function NewProposalPage() {
         </form>
       </main>
     </div>
+  );
+}
+
+export default function NewProposalPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <NewProposalContent />
+    </Suspense>
   );
 }
