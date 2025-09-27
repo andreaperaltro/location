@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { ArrowLeft, Save, MapPin, Tag, FileText, Camera } from 'lucide-react';
+import { ArrowLeft, Save, MapPin, Tag, FileText, Camera, Shield } from 'lucide-react';
 import PhotoUpload from '@/components/photo-upload';
 import MapPreview from '@/components/map-preview';
 
@@ -16,6 +16,7 @@ interface LocationFormData {
   notes: string;
   tags: string[];
   projectId: string;
+  isPrivate: boolean;
 }
 
 export default function NewLocationPage() {
@@ -30,6 +31,7 @@ export default function NewLocationPage() {
     notes: '',
     tags: [],
     projectId: '',
+    isPrivate: false,
   });
   const [tagInput, setTagInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -266,6 +268,25 @@ export default function NewLocationPage() {
                   <option value="Asia/Tokyo">Asia/Tokyo</option>
                 </select>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="isPrivate"
+                  checked={formData.isPrivate}
+                  onChange={(e) => handleInputChange('isPrivate', e.target.checked)}
+                  className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2"
+                />
+                <label htmlFor="isPrivate" className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  Keep location private in public proposals
+                </label>
+              </div>
+              <p className="text-xs text-muted-foreground ml-7">
+                When enabled, only the city will be shown in public proposals instead of exact coordinates
+              </p>
             </div>
           </div>
 

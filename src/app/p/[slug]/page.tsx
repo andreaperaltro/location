@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
-import { MapPin, Camera, Calendar, Sun, Download, Share } from 'lucide-react';
+import { MapPin, Camera, Calendar, Sun, Download, Share, Shield } from 'lucide-react';
+import { createPublicLocationData, getPrivacySafeMapUrl, formatCoordinatesForDisplay, shouldShowPrivacyWarning } from '@/lib/location-privacy';
+import { addWatermarkToPublicImage, shouldWatermarkImage } from '@/lib/watermark';
 
 interface Proposal {
   id: string;
@@ -12,6 +14,8 @@ interface Proposal {
   outroMd?: string;
   status: string;
   slug: string;
+  watermarkText?: string;
+  watermarkEnabled: boolean;
   createdAt: string;
   project: {
     title: string;
@@ -34,6 +38,7 @@ interface ProposalItem {
     timezone: string;
     notes?: string;
     tags: string[];
+    isPrivate: boolean;
   };
   photos: ProposalPhoto[];
 }
@@ -54,12 +59,20 @@ export default function PublicProposalPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<ProposalPhoto | null>(null);
+  const [watermarkedImages, setWatermarkedImages] = useState<Record<string, string>>({});
 
   const slug = params.slug as string;
 
   useEffect(() => {
     fetchProposal();
   }, [slug]);
+
+  // Track page view
+  useEffect(() => {
+    if (proposal) {
+      trackView();
+    }
+  }, [proposal]);
 
   const fetchProposal = async () => {
     try {
@@ -72,12 +85,59 @@ export default function PublicProposalPage() {
 
       const data = await response.json();
       setProposal(data);
+
+      // Pre-process watermarked images if needed
+      if (data.watermarkEnabled && data.watermarkText) {
+        await processWatermarkedImages(data.items);
+      }
     } catch (error) {
       console.error('Error fetching proposal:', error);
       setError(error instanceof Error ? error.message : 'Failed to load proposal');
     } finally {
       setLoading(false);
     }
+  };
+
+  const trackView = async () => {
+    try {
+      await fetch(`/api/analytics/track`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          proposalId: proposal?.id,
+          event: 'view',
+        }),
+      });
+    } catch (error) {
+      console.error('Error tracking view:', error);
+    }
+  };
+
+  const processWatermarkedImages = async (items: ProposalItem[]) => {
+    const watermarkPromises: Promise<void>[] = [];
+
+    items.forEach(item => {
+      item.photos.forEach(photo => {
+        if (shouldWatermarkImage(true, proposal?.watermarkEnabled || false)) {
+          watermarkPromises.push(
+            addWatermarkToPublicImage(photo.url, proposal?.watermarkText || '')
+              .then(watermarkedUrl => {
+                setWatermarkedImages(prev => ({
+                  ...prev,
+                  [photo.id]: watermarkedUrl,
+                }));
+              })
+              .catch(error => {
+                console.error('Error watermarking image:', error);
+              })
+          );
+        }
+      });
+    });
+
+    await Promise.all(watermarkPromises);
   };
 
   const formatDate = (dateString: string) => {
@@ -202,55 +262,85 @@ export default function PublicProposalPage() {
               {/* Photos Grid */}
               {item.photos.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {item.photos.map((photo) => (
-                    <div
-                      key={photo.id}
-                      className="relative group cursor-pointer"
-                      onClick={() => setSelectedPhoto(photo)}
-                    >
-                      <div className="aspect-[4/3] bg-muted rounded-lg overflow-hidden">
-                        <Image
-                          src={photo.url}
-                          alt={`Photo from ${item.location.title}`}
-                          width={600}
-                          height={450}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          unoptimized
-                        />
-                      </div>
+                  {item.photos.map((photo) => {
+                    const imageUrl = watermarkedImages[photo.id] || photo.url;
+                    return (
+                      <div
+                        key={photo.id}
+                        className="relative group cursor-pointer"
+                        onClick={() => setSelectedPhoto(photo)}
+                      >
+                        <div className="aspect-[4/3] bg-muted rounded-lg overflow-hidden">
+                          <Image
+                            src={imageUrl}
+                            alt={`Photo from ${item.location.title}`}
+                            width={600}
+                            height={450}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            unoptimized
+                          />
+                        </div>
                       
-                      {/* Photo Info Overlay */}
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-                        <div className="text-white">
-                          <div className="flex items-center justify-between text-sm">
-                            <span>{formatTime(photo.takenAt)}</span>
-                            {photo.lat && photo.lng && (
-                              <span className="flex items-center gap-1">
-                                <MapPin className="h-3 w-3" />
-                                GPS
-                              </span>
-                            )}
+                        {/* Photo Info Overlay */}
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+                          <div className="text-white">
+                            <div className="flex items-center justify-between text-sm">
+                              <span>{formatTime(photo.takenAt)}</span>
+                              {photo.lat && photo.lng && (
+                                <span className="flex items-center gap-1">
+                                  <MapPin className="h-3 w-3" />
+                                  GPS
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
               {/* Location Details */}
               <div className="bg-muted/30 p-6 rounded-lg">
-                <h3 className="font-semibold text-foreground mb-4">Location Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div className="space-y-2">
-                    <p><strong>Address:</strong> {item.location.address}</p>
-                    <p><strong>Coordinates:</strong> {item.location.lat.toFixed(6)}, {item.location.lng.toFixed(6)}</p>
-                  </div>
-                  <div className="space-y-2">
-                    <p><strong>Timezone:</strong> {item.location.timezone}</p>
-                    <p><strong>Photo Count:</strong> {item.photos.length}</p>
-                  </div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-foreground">Location Details</h3>
+                  {shouldShowPrivacyWarning(item.location.isPrivate) && (
+                    <div className="flex items-center gap-2 text-amber-600 text-sm">
+                      <Shield className="h-4 w-4" />
+                      <span>Privacy Protected</span>
+                    </div>
+                  )}
                 </div>
+                
+                {(() => {
+                  const publicData = createPublicLocationData({
+                    lat: item.location.lat,
+                    lng: item.location.lng,
+                    address: item.location.address,
+                    isPrivate: item.location.isPrivate,
+                  });
+                  
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div className="space-y-2">
+                        <p><strong>Address:</strong> {publicData.address}</p>
+                        <p>
+                          <strong>Coordinates:</strong>{' '}
+                          {formatCoordinatesForDisplay(
+                            publicData.lat,
+                            publicData.lng,
+                            item.location.isPrivate
+                          )}
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <p><strong>Timezone:</strong> {item.location.timezone}</p>
+                        <p><strong>Photo Count:</strong> {item.photos.length}</p>
+                      </div>
+                    </div>
+                  );
+                })()}
                 
                 {item.location.notes && (
                   <div className="mt-4 pt-4 border-t border-border">
@@ -275,13 +365,19 @@ export default function PublicProposalPage() {
 
                 <div className="mt-4 pt-4 border-t border-border">
                   <a
-                    href={`https://www.google.com/maps?q=${item.location.lat},${item.location.lng}`}
+                    href={getPrivacySafeMapUrl({
+                      lat: item.location.lat,
+                      lng: item.location.lng,
+                      address: item.location.address,
+                      isPrivate: item.location.isPrivate,
+                    })}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 text-primary hover:text-primary/80 text-sm"
                   >
                     <MapPin className="h-4 w-4" />
                     View on Google Maps
+                    {item.location.isPrivate && <span className="text-xs">(approximate)</span>}
                   </a>
                 </div>
               </div>
@@ -315,7 +411,7 @@ export default function PublicProposalPage() {
         >
           <div className="relative max-w-4xl max-h-full">
             <Image
-              src={selectedPhoto.url}
+              src={watermarkedImages[selectedPhoto.id] || selectedPhoto.url}
               alt="Selected photo"
               width={1200}
               height={900}

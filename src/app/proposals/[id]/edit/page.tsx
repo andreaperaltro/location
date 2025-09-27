@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { ArrowLeft, Save, Eye, Share, FileText, Download, MapPin, Camera } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Share, FileText, Download, MapPin, Camera, Shield, Image as ImageIcon, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 import PdfGenerator from '@/components/pdf-generator';
 
@@ -14,6 +14,10 @@ interface Proposal {
   outroMd: string;
   status: string;
   slug: string;
+  watermarkText?: string;
+  watermarkEnabled: boolean;
+  viewCount: number;
+  downloadCount: number;
   createdAt: string;
   project: {
     id: string;
@@ -113,6 +117,8 @@ export default function EditProposalPage() {
           introMd: proposal.introMd,
           outroMd: proposal.outroMd,
           status: proposal.status,
+          watermarkText: proposal.watermarkText,
+          watermarkEnabled: proposal.watermarkEnabled,
         }),
       });
 
@@ -146,6 +152,8 @@ export default function EditProposalPage() {
         body: JSON.stringify({
           ...proposal,
           status: 'PUBLISHED',
+          watermarkText: proposal.watermarkText,
+          watermarkEnabled: proposal.watermarkEnabled,
         }),
       });
 
@@ -353,6 +361,106 @@ export default function EditProposalPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Watermark Settings */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <ImageIcon className="h-5 w-5" />
+            Watermark Settings
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="watermarkEnabled"
+                  checked={proposal.watermarkEnabled}
+                  onChange={(e) => handleInputChange('watermarkEnabled', e.target.checked)}
+                  className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2"
+                />
+                <label htmlFor="watermarkEnabled" className="text-sm font-medium text-foreground">
+                  Enable watermark on public photos
+                </label>
+              </div>
+
+              {proposal.watermarkEnabled && (
+                <div>
+                  <label htmlFor="watermarkText" className="block text-sm font-medium text-foreground mb-2">
+                    Watermark Text
+                  </label>
+                  <input
+                    id="watermarkText"
+                    type="text"
+                    value={proposal.watermarkText || ''}
+                    onChange={(e) => handleInputChange('watermarkText', e.target.value)}
+                    className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    placeholder="e.g., Your Company Name"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    This text will appear as a watermark on all photos in public proposals
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <h3 className="text-sm font-medium text-foreground mb-2">Watermark Preview</h3>
+              <div className="aspect-video bg-muted rounded border border-border flex items-center justify-center">
+                {proposal.watermarkEnabled && proposal.watermarkText ? (
+                  <div className="text-center">
+                    <div className="text-sm text-muted-foreground mb-2">Sample photo with watermark:</div>
+                    <div className="text-lg font-bold text-white bg-black/50 px-3 py-1 rounded">
+                      {proposal.watermarkText}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">No watermark configured</div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Analytics */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Analytics
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-4 bg-card border border-border rounded-lg">
+              <div className="flex items-center gap-3 mb-2">
+                <Eye className="h-5 w-5 text-primary" />
+                <h3 className="font-medium">Views</h3>
+              </div>
+              <p className="text-2xl font-bold text-card-foreground">{proposal.viewCount}</p>
+              <p className="text-sm text-muted-foreground">Total proposal views</p>
+            </div>
+
+            <div className="p-4 bg-card border border-border rounded-lg">
+              <div className="flex items-center gap-3 mb-2">
+                <Download className="h-5 w-5 text-primary" />
+                <h3 className="font-medium">Downloads</h3>
+              </div>
+              <p className="text-2xl font-bold text-card-foreground">{proposal.downloadCount}</p>
+              <p className="text-sm text-muted-foreground">PDF downloads</p>
+            </div>
+          </div>
+
+          {proposal.status === 'PUBLISHED' && (
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2 text-green-800">
+                <BarChart3 className="h-4 w-4" />
+                <span className="text-sm font-medium">Analytics are being tracked</span>
+              </div>
+              <p className="text-xs text-green-600 mt-1">
+                View and download counts are automatically updated when users interact with your public proposal
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Proposal Content */}

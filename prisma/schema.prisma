@@ -121,6 +121,7 @@ model Location {
   timezone    String   @default("UTC")
   notes       String?  @db.Text
   tags        String[]
+  isPrivate   Boolean  @default(false) // Hide exact GPS in public views
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -182,6 +183,10 @@ model Proposal {
   outroMd   String?       @db.Text
   status    ProposalStatus @default(DRAFT)
   slug      String        @unique
+  watermarkText String?   // Optional watermark text
+  watermarkEnabled Boolean @default(false) // Enable/disable watermarking
+  viewCount Int          @default(0) // Track proposal views
+  downloadCount Int      @default(0) // Track PDF downloads
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
@@ -189,6 +194,7 @@ model Proposal {
   project    Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
   items      ProposalItem[]
   shareLinks ShareLink[]
+  analytics  ProposalAnalytics[]
 
   @@index([userId])
   @@index([projectId])
@@ -241,6 +247,22 @@ model ShareLink {
   @@index([proposalId])
   @@index([token])
   @@index([expiresAt])
+}
+
+model ProposalAnalytics {
+  id         String   @id @default(cuid())
+  proposalId String
+  event      String   // 'view', 'download', 'share'
+  userAgent  String?  @db.Text
+  ipAddress  String?  // For basic analytics (anonymized)
+  referrer   String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  proposal Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@index([proposalId])
+  @@index([event])
+  @@index([createdAt])
 }
 
 // Enums
