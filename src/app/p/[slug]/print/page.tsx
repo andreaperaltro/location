@@ -209,7 +209,7 @@ export default function PrintPage() {
               <h2 className="text-2xl font-semibold text-gray-900 mb-2 flex items-center gap-2">
                 Location {index + 1}: {item.location.title}
                 {item.location.isPrivate && (
-                  <Shield className="h-5 w-5 text-amber-600" title="Private location" />
+                  <Shield className="h-5 w-5 text-amber-600" />
                 )}
               </h2>
               

@@ -5,10 +5,10 @@ const prisma = new PrismaClient();
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const slug = params.slug;
+    const { slug } = await params;
 
     // Fetch published proposal with all related data
     const proposal = await prisma.proposal.findFirst({
@@ -26,6 +26,9 @@ export async function GET(
           include: {
             location: true,
             photos: {
+              include: {
+                photo: true,
+              },
               orderBy: {
                 order: 'asc',
               },
@@ -70,14 +73,14 @@ export async function GET(
           notes: item.location.notes,
           tags: item.location.tags,
         },
-        photos: item.photos.map(photo => ({
-          id: photo.id,
-          url: photo.url,
-          thumbUrl: photo.thumbUrl,
-          takenAt: photo.takenAt.toISOString(),
-          lat: photo.lat ? Number(photo.lat) : undefined,
-          lng: photo.lng ? Number(photo.lng) : undefined,
-          order: photo.order,
+        photos: item.photos.map(itemPhoto => ({
+          id: itemPhoto.photo.id,
+          url: itemPhoto.photo.url,
+          thumbUrl: itemPhoto.photo.thumbUrl,
+          takenAt: itemPhoto.photo.takenAt.toISOString(),
+          lat: itemPhoto.photo.lat ? Number(itemPhoto.photo.lat) : undefined,
+          lng: itemPhoto.photo.lng ? Number(itemPhoto.photo.lng) : undefined,
+          order: itemPhoto.order,
         })),
       })),
     };

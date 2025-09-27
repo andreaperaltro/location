@@ -59,10 +59,7 @@ export async function processPhotoUpload(
     // Extract EXIF data
     const exifData = await exifr.parse(buffer, {
       gps: true,
-      ifd0: true,
-      ifd1: true,
       exif: true,
-      gps: true,
     });
 
     // Extract datetime from EXIF or use current time

@@ -129,7 +129,7 @@ export default function ShareDialog({
             
             <div className="grid grid-cols-2 gap-3">
               {/* Native Share */}
-              {navigator.share && (
+              {typeof navigator !== 'undefined' && 'share' in navigator && typeof navigator.share === 'function' && (
                 <button
                   onClick={handleShare}
                   className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-muted transition-colors"

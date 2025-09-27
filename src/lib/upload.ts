@@ -61,7 +61,7 @@ export async function uploadPhoto(file: File, path: string): Promise<UploadResul
 /**
  * Get a signed URL for private file access via our API
  */
-export async function getSignedUrl(path: string, expiresIn: number = 3600): Promise<SignedUrlResult> {
+export async function getPhotoSignedUrl(path: string, expiresIn: number = 3600): Promise<SignedUrlResult> {
   try {
     const response = await fetch('/api/signed-url', {
       method: 'POST',

@@ -106,7 +106,7 @@ const withPWA = require('next-pwa')({
       }
     },
     {
-      urlPattern: ({ url }) => {
+      urlPattern: ({ url }: { url: URL }) => {
         const isSameOrigin = self.origin === url.origin
         if (!isSameOrigin) return false
         const pathname = url.pathname
@@ -126,7 +126,7 @@ const withPWA = require('next-pwa')({
       }
     },
     {
-      urlPattern: ({ url }) => {
+      urlPattern: ({ url }: { url: URL }) => {
         const isSameOrigin = self.origin === url.origin
         if (!isSameOrigin) return false
         const pathname = url.pathname
@@ -147,10 +147,7 @@ const withPWA = require('next-pwa')({
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
-  experimental: {
-    serverComponentsExternalPackages: ['sharp']
-  },
+  serverExternalPackages: ['sharp', 'playwright', 'exifr'],
   images: {
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],

@@ -41,7 +41,7 @@ export default function SignInPage() {
             Sign in to Location Manager
           </h2>
           <p className="mt-2 text-center text-sm text-muted-foreground">
-            Enter your email address and we'll send you a magic link
+            Enter your email address and we&apos;ll send you a magic link
           </p>
         </div>
         

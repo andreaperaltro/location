@@ -5,7 +5,7 @@ import { getProposalAnalytics } from '@/lib/analytics';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { proposalId: string } }
+  { params }: { params: Promise<{ proposalId: string }> }
 ) {
   try {
     // Check authentication
@@ -14,7 +14,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const proposalId = params.proposalId;
+    const { proposalId } = await params;
 
     // Verify proposal ownership
     const { PrismaClient } = await import('@prisma/client');

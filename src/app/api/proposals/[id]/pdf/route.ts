@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check authentication
@@ -17,7 +17,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const proposalId = params.id;
+    const proposalId = (await params).id;
 
     // Fetch proposal with user verification
     const proposal = await prisma.proposal.findFirst({
@@ -93,7 +93,7 @@ export async function POST(
 // GET endpoint to check if PDF exists or get existing PDF URL
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -101,7 +101,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const proposalId = params.id;
+    const proposalId = (await params).id;
 
     // Check if proposal exists and user has access
     const proposal = await prisma.proposal.findFirst({

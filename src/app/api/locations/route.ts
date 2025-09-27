@@ -66,19 +66,30 @@ export async function POST(request: NextRequest) {
 
     // Update photos with location ID if provided
     if (photos && photos.length > 0) {
-      await prisma.photo.updateMany({
+      // First verify photos belong to user through their locations
+      const userPhotos = await prisma.photo.findMany({
         where: {
           id: { in: photos },
-          userId: session.user.id,
-        },
-        data: {
-          locationId: location.id,
+          location: {
+            userId: session.user.id,
+          },
         },
       });
+
+      // Update only the photos that belong to the user
+      if (userPhotos.length > 0) {
+        await prisma.photo.updateMany({
+          where: {
+            id: { in: userPhotos.map(p => p.id) },
+          },
+          data: {
+            locationId: location.id,
+          },
+        });
+      }
     }
 
     return NextResponse.json({
-      id: location.id,
       ...location,
       lat: Number(location.lat),
       lng: Number(location.lng),
@@ -105,7 +116,7 @@ export async function GET(request: NextRequest) {
     const projectId = searchParams.get('projectId');
 
     // Build where clause
-    const where: any = {
+    const where: { userId: string; projectId?: string } = {
       userId: session.user.id,
     };
 

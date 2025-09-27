@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
         projectId,
         userId: session.user.id,
         items: {
-          create: items.map((item: any, index: number) => ({
+          create: items.map((item: { locationId: string; order?: number; selectedPhotoIds?: string[] }, index: number) => ({
             locationId: item.locationId,
             order: item.order || index,
             selectedPhotoIds: item.selectedPhotoIds || [],
@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
 
     // Build where clause
-    const where: any = {
+    const where: { userId: string; projectId?: string; status?: 'DRAFT' | 'PUBLISHED' } = {
       userId: session.user.id,
     };
 
@@ -128,8 +128,8 @@ export async function GET(request: NextRequest) {
       where.projectId = projectId;
     }
 
-    if (status) {
-      where.status = status;
+    if (status && (status === 'DRAFT' || status === 'PUBLISHED')) {
+      where.status = status as 'DRAFT' | 'PUBLISHED';
     }
 
     // Fetch proposals

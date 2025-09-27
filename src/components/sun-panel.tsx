@@ -35,7 +35,7 @@ export default function SunPanel({ lat, lng, timezone, title, className = '' }: 
       setLoading(true);
       
       // Calculate sun times for the next 7 days starting from selected date
-      const dates = [];
+      const dates: Date[] = [];
       for (let i = 0; i < 7; i++) {
         const date = new Date(selectedDate);
         date.setDate(date.getDate() + i);
@@ -45,11 +45,11 @@ export default function SunPanel({ lat, lng, timezone, title, className = '' }: 
       const sunTimesData = getSunTimesForDateRange(lat, lng, dates[0], dates[6], timezone);
       
       const formattedSunTimes = sunTimesData.map((sunTime, index) => ({
-        date: sunTime.formatted.date,
-        sunrise: sunTime.formatted.sunrise,
-        sunset: sunTime.formatted.sunset,
-        goldenHourStart: sunTime.formatted.goldenHourStart,
-        goldenHourEnd: sunTime.formatted.goldenHourEnd,
+        date: dates[index].toLocaleDateString(),
+        sunrise: sunTime.sunrise,
+        sunset: sunTime.sunset,
+        goldenHourStart: sunTime.goldenStart,
+        goldenHourEnd: sunTime.goldenEnd,
         isToday: index === 0,
       }));
 

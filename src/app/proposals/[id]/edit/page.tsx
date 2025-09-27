@@ -95,7 +95,7 @@ export default function EditProposalPage() {
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | boolean) => {
     if (!proposal) return;
     setProposal({ ...proposal, [field]: value });
   };

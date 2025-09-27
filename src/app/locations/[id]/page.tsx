@@ -255,7 +255,10 @@ export default function LocationPage() {
         {location.photos.length > 0 && (
           <div className="space-y-4">
             <PhotoGallery
-              photos={location.photos}
+              photos={location.photos.map(photo => ({
+                ...photo,
+                takenAt: new Date(photo.takenAt), // Convert ISO string to Date
+              }))}
               onDeletePhoto={handleDeletePhoto}
               isDeleting={isDeleting}
             />

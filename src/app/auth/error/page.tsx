@@ -1,13 +1,13 @@
 import Link from 'next/link';
 
 interface ErrorPageProps {
-  searchParams: {
+  searchParams: Promise<{
     error?: string;
-  };
+  }>;
 }
 
-export default function AuthErrorPage({ searchParams }: ErrorPageProps) {
-  const error = searchParams.error;
+export default async function AuthErrorPage({ searchParams }: ErrorPageProps) {
+  const { error } = await searchParams;
 
   const getErrorMessage = (error: string) => {
     switch (error) {

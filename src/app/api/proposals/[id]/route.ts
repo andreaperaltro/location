@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check authentication
@@ -16,7 +16,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const proposalId = params.id;
+    const { id: proposalId } = await params;
 
     // Fetch proposal with all related data
     const proposal = await prisma.proposal.findFirst({
@@ -66,7 +66,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check authentication
@@ -75,7 +75,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const proposalId = params.id;
+    const proposalId = (await params).id;
     const body = await request.json();
 
     // Verify proposal ownership
@@ -140,7 +140,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check authentication
@@ -149,7 +149,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const proposalId = params.id;
+    const proposalId = (await params).id;
 
     // Verify proposal ownership
     const proposal = await prisma.proposal.findFirst({
