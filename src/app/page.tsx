@@ -1,258 +1,192 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { Plus, FolderOpen, MapPin, Camera, Users, Calendar } from 'lucide-react';
-import Link from 'next/link';
+import { useState } from 'react';
+import { Upload, MapPin, Sun, Calendar, Camera } from 'lucide-react';
 
-interface Project {
-  id: string;
-  title: string;
-  description?: string;
-  status: string;
-  startDate?: string;
-  endDate?: string;
-  client?: {
-    name: string;
+interface PhotoData {
+  url: string;
+  takenAt?: string;
+  lat?: number;
+  lng?: number;
+  address?: string;
+  sunTimes?: {
+    sunrise: string;
+    sunset: string;
+    goldenStart: string;
+    goldenEnd: string;
   };
-  locations: {
-    id: string;
-    title: string;
-    photos: { id: string }[];
-  }[];
-  proposals: {
-    id: string;
-    title: string;
-    status: string;
-  }[];
-  createdAt: string;
-  updatedAt: string;
 }
 
-export default function Dashboard() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function SimplePhotoUpload() {
+  const [photoData, setPhotoData] = useState<PhotoData | null>(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (status === 'loading') return;
-    
-    // Temporarily allow access without authentication
-    // TODO: Re-enable authentication when database is configured
-    fetchProjects();
-  }, [session, status]);
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-  const fetchProjects = async () => {
+    setLoading(true);
+    setError(null);
+    setPhotoData(null);
+
     try {
-      setLoading(true);
-      const response = await fetch('/api/projects');
+      // Create a preview URL for the image
+      const previewUrl = URL.createObjectURL(file);
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch projects');
-      }
-
-      const data = await response.json();
-      setProjects(data);
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-      setError(error instanceof Error ? error.message : 'Failed to load projects');
+      // For now, let's just show the image and simulate some data
+      // In a real implementation, you'd upload to Supabase and process EXIF
+      setPhotoData({
+        url: previewUrl,
+        takenAt: new Date().toISOString(),
+        lat: 37.7749, // San Francisco coordinates as example
+        lng: -122.4194,
+        address: "San Francisco, CA, USA",
+        sunTimes: {
+          sunrise: "6:45 AM",
+          sunset: "7:30 PM",
+          goldenStart: "6:15 AM",
+          goldenEnd: "7:00 PM"
+        }
+      });
+    } catch (err) {
+      setError('Failed to process photo');
+      console.error('Error:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  if (status === 'loading' || loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-destructive mb-4">{error}</p>
-          <button
-            onClick={fetchProjects}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const totalLocations = projects.reduce((sum, project) => sum + project.locations.length, 0);
-  const totalPhotos = projects.reduce((sum, project) => 
-    sum + project.locations.reduce((locSum, location) => locSum + location.photos.length, 0), 0
-  );
-  const totalProposals = projects.reduce((sum, project) => sum + project.proposals.length, 0);
-
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Location Manager</h1>
-              <p className="text-sm text-muted-foreground">
-                Welcome to Location Manager
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <Link
-                href="/projects/new"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-              >
-                <Plus className="h-4 w-4" />
-                New Project
-              </Link>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Photo Location Analyzer</h1>
+          <p className="text-gray-600">Upload a photo to see its EXIF data, location, and sun times</p>
         </div>
-      </header>
 
-      {/* Stats */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="p-4 bg-card border border-border rounded-lg">
-            <div className="flex items-center gap-3">
-              <FolderOpen className="h-5 w-5 text-primary" />
-              <div>
-                <p className="text-2xl font-bold text-card-foreground">{projects.length}</p>
-                <p className="text-sm text-muted-foreground">Projects</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-4 bg-card border border-border rounded-lg">
-            <div className="flex items-center gap-3">
-              <MapPin className="h-5 w-5 text-primary" />
-              <div>
-                <p className="text-2xl font-bold text-card-foreground">{totalLocations}</p>
-                <p className="text-sm text-muted-foreground">Locations</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-4 bg-card border border-border rounded-lg">
-            <div className="flex items-center gap-3">
-              <Camera className="h-5 w-5 text-primary" />
-              <div>
-                <p className="text-2xl font-bold text-card-foreground">{totalPhotos}</p>
-                <p className="text-sm text-muted-foreground">Photos</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-4 bg-card border border-border rounded-lg">
-            <div className="flex items-center gap-3">
-              <Users className="h-5 w-5 text-primary" />
-              <div>
-                <p className="text-2xl font-bold text-card-foreground">{totalProposals}</p>
-                <p className="text-sm text-muted-foreground">Proposals</p>
-              </div>
-            </div>
+        {/* Upload Area */}
+        <div className="bg-white rounded-lg shadow-md p-8 mb-8">
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+            <Upload className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+            <label htmlFor="photo-upload" className="cursor-pointer">
+              <span className="text-lg font-medium text-gray-700">Click to upload a photo</span>
+              <input
+                id="photo-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+            </label>
+            <p className="text-sm text-gray-500 mt-2">Supports JPG, PNG, WebP</p>
           </div>
         </div>
 
-        {/* Projects Grid */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-foreground">Your Projects</h2>
-            <Link
-              href="/locations/new"
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              Add Location
-            </Link>
+        {/* Loading State */}
+        {loading && (
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Processing photo...</p>
           </div>
+        )}
 
-          {projects.length === 0 ? (
-            <div className="text-center py-12">
-              <FolderOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">No projects yet</h3>
-              <p className="text-muted-foreground mb-6">
-                Create your first project to start managing locations and proposals
-              </p>
-              <Link
-                href="/projects/new"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-              >
-                <Plus className="h-4 w-4" />
-                Create Project
-              </Link>
+        {/* Error State */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
+            <p className="text-red-700">{error}</p>
+          </div>
+        )}
+
+        {/* Photo Data Display */}
+        {photoData && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Photo */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <Camera className="h-5 w-5" />
+                Photo
+              </h2>
+              <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                <img
+                  src={photoData.url}
+                  alt="Uploaded photo"
+                  className="w-full h-full object-cover"
+                />
+              </div>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projects.map((project) => (
-                <Link
-                  key={project.id}
-                  href={`/projects/${project.id}`}
-                  className="block p-6 bg-card border border-border rounded-lg hover:border-primary/50 transition-colors group"
-                >
-                  <div className="space-y-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold text-card-foreground group-hover:text-primary transition-colors">
-                          {project.title}
-                        </h3>
-                        {project.client && (
-                          <p className="text-sm text-muted-foreground">
-                            Client: {project.client.name}
-                          </p>
-                        )}
-                      </div>
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        project.status === 'ACTIVE' 
-                          ? 'bg-green-100 text-green-800' 
-                          : project.status === 'COMPLETED'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {project.status}
-                      </span>
+
+            {/* Data */}
+            <div className="space-y-6">
+              {/* EXIF Data */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Photo Details
+                </h2>
+                <div className="space-y-3">
+                  <div>
+                    <span className="font-medium text-gray-700">Taken:</span>
+                    <p className="text-gray-600">
+                      {photoData.takenAt ? new Date(photoData.takenAt).toLocaleString() : 'Unknown'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Location */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  <MapPin className="h-5 w-5" />
+                  Location
+                </h2>
+                <div className="space-y-3">
+                  <div>
+                    <span className="font-medium text-gray-700">Address:</span>
+                    <p className="text-gray-600">{photoData.address || 'Unknown'}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Coordinates:</span>
+                    <p className="text-gray-600">
+                      {photoData.lat && photoData.lng 
+                        ? `${photoData.lat.toFixed(6)}, ${photoData.lng.toFixed(6)}`
+                        : 'Unknown'
+                      }
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sun Times */}
+              {photoData.sunTimes && (
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <Sun className="h-5 w-5" />
+                    Sun Times
+                  </h2>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-3 bg-yellow-50 rounded-lg">
+                      <p className="text-sm font-medium text-gray-700">Sunrise</p>
+                      <p className="text-lg font-bold text-orange-600">{photoData.sunTimes.sunrise}</p>
                     </div>
-
-                    {project.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {project.description}
-                      </p>
-                    )}
-
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        {project.locations.length} locations
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Users className="h-4 w-4" />
-                        {project.proposals.length} proposals
-                      </div>
+                    <div className="text-center p-3 bg-orange-50 rounded-lg">
+                      <p className="text-sm font-medium text-gray-700">Sunset</p>
+                      <p className="text-lg font-bold text-red-600">{photoData.sunTimes.sunset}</p>
                     </div>
-
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Calendar className="h-3 w-3" />
-                      Updated {new Date(project.updatedAt).toLocaleDateString()}
+                    <div className="text-center p-3 bg-yellow-100 rounded-lg">
+                      <p className="text-sm font-medium text-gray-700">Golden Hour Start</p>
+                      <p className="text-lg font-bold text-yellow-600">{photoData.sunTimes.goldenStart}</p>
+                    </div>
+                    <div className="text-center p-3 bg-orange-100 rounded-lg">
+                      <p className="text-sm font-medium text-gray-700">Golden Hour End</p>
+                      <p className="text-lg font-bold text-orange-600">{photoData.sunTimes.goldenEnd}</p>
                     </div>
                   </div>
-                </Link>
-              ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
