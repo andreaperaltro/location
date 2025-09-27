@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
-import { MapPin, Camera, Calendar, Sun, Sunrise, Sunset } from 'lucide-react';
+import { MapPin, Camera, Calendar, Sun, Sunrise, Sunset, Shield } from 'lucide-react';
+import { addWatermarkToPublicImage } from '@/lib/watermark';
+import { createPublicLocationData, formatCoordinatesForDisplay, shouldShowPrivacyWarning } from '@/lib/location-privacy';
 
 interface Proposal {
   id: string;
@@ -13,6 +15,8 @@ interface Proposal {
   status: string;
   slug: string;
   createdAt: string;
+  watermarkText?: string;
+  watermarkEnabled: boolean;
   project: {
     title: string;
     client?: {
@@ -34,6 +38,7 @@ interface ProposalItem {
     timezone: string;
     notes?: string;
     tags: string[];
+    isPrivate: boolean;
   };
   photos: ProposalPhoto[];
 }
@@ -54,6 +59,7 @@ export default function PrintPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [baseUrl, setBaseUrl] = useState('');
+  const [watermarkedImages, setWatermarkedImages] = useState<Record<string, string>>({});
 
   const slug = params.slug as string;
 
@@ -74,12 +80,32 @@ export default function PrintPage() {
 
       const data = await response.json();
       setProposal(data);
+
+      // Process watermarked images if watermarking is enabled
+      if (data.watermarkEnabled && data.watermarkText) {
+        await processWatermarkedImages(data.items);
+      }
     } catch (error) {
       console.error('Error fetching proposal:', error);
       setError(error instanceof Error ? error.message : 'Failed to load proposal');
     } finally {
       setLoading(false);
     }
+  };
+
+  const processWatermarkedImages = async (items: ProposalItem[]) => {
+    const watermarked: Record<string, string> = {};
+    
+    for (const item of items) {
+      for (const photo of item.photos) {
+        if (proposal?.watermarkText) {
+          const watermarkedUrl = await addWatermarkToPublicImage(photo.url, proposal.watermarkText);
+          watermarked[photo.id] = watermarkedUrl;
+        }
+      }
+    }
+    
+    setWatermarkedImages(watermarked);
   };
 
   const formatDate = (dateString: string) => {
@@ -180,20 +206,29 @@ export default function PrintPage() {
           <div key={item.id} className="print:break-inside-avoid">
             {/* Location Header */}
             <div className="mb-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-2 flex items-center gap-2">
                 Location {index + 1}: {item.location.title}
+                {item.location.isPrivate && (
+                  <Shield className="h-5 w-5 text-amber-600" title="Private location" />
+                )}
               </h2>
-              <div className="flex items-start gap-4 text-gray-600">
-                <div className="flex items-center gap-1">
-                  <MapPin className="h-4 w-4" />
-                  <span className="text-sm">{item.location.address}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-sm">
-                    {item.location.lat.toFixed(6)}, {item.location.lng.toFixed(6)}
-                  </span>
-                </div>
-              </div>
+              
+              {(() => {
+                const publicLocation = createPublicLocationData(item.location);
+                return (
+                  <div className="flex items-start gap-4 text-gray-600">
+                    <div className="flex items-center gap-1">
+                      <MapPin className="h-4 w-4" />
+                      <span className="text-sm">{publicLocation.address}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm">
+                        {formatCoordinatesForDisplay(item.location.lat, item.location.lng, item.location.isPrivate)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
               
               {item.location.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
@@ -222,59 +257,82 @@ export default function PrintPage() {
                 </h3>
                 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {item.photos.map((photo) => (
-                    <div key={photo.id} className="relative group">
-                      <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
-                        <Image
-                          src={photo.url}
-                          alt={`Location photo from ${item.location.title}`}
-                          width={400}
-                          height={400}
-                          className="w-full h-full object-cover"
-                          unoptimized
-                        />
-                      </div>
+                  {item.photos.map((photo) => {
+                    const imageUrl = watermarkedImages[photo.id] || photo.url;
+                    return (
+                      <div key={photo.id} className="relative group">
+                        <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                          <Image
+                            src={imageUrl}
+                            alt={`Location photo from ${item.location.title}`}
+                            width={400}
+                            height={400}
+                            className="w-full h-full object-cover"
+                            unoptimized
+                          />
+                        </div>
                       
-                      {/* Photo Info Overlay */}
-                      <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white p-2 text-xs">
-                        <div className="flex items-center justify-between">
-                          <span>{formatTime(photo.takenAt)}</span>
-                          {photo.lat && photo.lng && (
-                            <span className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
-                              GPS
-                            </span>
-                          )}
+                        {/* Photo Info Overlay */}
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white p-2 text-xs">
+                          <div className="flex items-center justify-between">
+                            <span>{formatTime(photo.takenAt)}</span>
+                            {photo.lat && photo.lng && !item.location.isPrivate && (
+                              <span className="flex items-center gap-1">
+                                <MapPin className="h-3 w-3" />
+                                GPS
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
 
             {/* Location Details */}
             <div className="bg-gray-50 p-4 rounded-lg print:bg-gray-100">
-              <h4 className="font-medium text-gray-900 mb-2">Location Details</h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p><strong>Address:</strong> {item.location.address}</p>
-                  <p><strong>Coordinates:</strong> {item.location.lat.toFixed(6)}, {item.location.lng.toFixed(6)}</p>
-                </div>
-                <div>
-                  <p><strong>Timezone:</strong> {item.location.timezone}</p>
-                  <p><strong>Photo Count:</strong> {item.photos.length}</p>
-                </div>
-              </div>
+              <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                Location Details
+                {item.location.isPrivate && (
+                  <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded">
+                    Private Location
+                  </span>
+                )}
+              </h4>
+              
+              {(() => {
+                const publicLocation = createPublicLocationData(item.location);
+                return (
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p><strong>Address:</strong> {publicLocation.address}</p>
+                      <p><strong>Coordinates:</strong> {formatCoordinatesForDisplay(item.location.lat, item.location.lng, item.location.isPrivate)}</p>
+                    </div>
+                    <div>
+                      <p><strong>Timezone:</strong> {item.location.timezone}</p>
+                      <p><strong>Photo Count:</strong> {item.photos.length}</p>
+                    </div>
+                  </div>
+                );
+              })()}
               
               <div className="mt-3">
-                <a
-                  href={`https://www.google.com/maps?q=${item.location.lat},${item.location.lng}`}
-                  className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm"
-                >
-                  <MapPin className="h-4 w-4" />
-                  View on Google Maps
-                </a>
+                {item.location.isPrivate ? (
+                  <div className="text-sm text-gray-600 flex items-center gap-2">
+                    <Shield className="h-4 w-4" />
+                    <span>Exact location hidden for privacy</span>
+                  </div>
+                ) : (
+                  <a
+                    href={`https://www.google.com/maps?q=${item.location.lat},${item.location.lng}`}
+                    className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    <MapPin className="h-4 w-4" />
+                    View on Google Maps
+                  </a>
+                )}
               </div>
             </div>
 
