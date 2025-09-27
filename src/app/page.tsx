@@ -39,11 +39,9 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (status === 'loading') return;
-    if (!session) {
-      router.push('/signin');
-      return;
-    }
-
+    
+    // Temporarily allow access without authentication
+    // TODO: Re-enable authentication when database is configured
     fetchProjects();
   }, [session, status]);
 
@@ -108,7 +106,7 @@ export default function Dashboard() {
             <div>
               <h1 className="text-2xl font-bold text-foreground">Location Manager</h1>
               <p className="text-sm text-muted-foreground">
-                Welcome back, {session?.user?.name || session?.user?.email}
+                Welcome to Location Manager
               </p>
             </div>
             
