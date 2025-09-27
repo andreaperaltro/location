@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { ArrowLeft, MapPin, Calendar, Tag, Camera, Plus } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Tag, Camera, Plus, Sun } from 'lucide-react';
 import PhotoUpload from '@/components/photo-upload';
 import PhotoGallery from '@/components/photo-gallery';
+import LocationSunTimes from '@/components/location-sun-times';
 import { deletePhoto } from '@/lib/actions/photo';
 
 interface Location {
@@ -219,6 +220,21 @@ export default function LocationPage() {
               <p className="text-sm whitespace-pre-wrap">{location.notes}</p>
             </div>
           )}
+        </div>
+
+        {/* Sun Times & Map */}
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <Sun className="h-5 w-5" />
+            Sun Times & Map
+          </h2>
+          <LocationSunTimes
+            lat={location.lat}
+            lng={location.lng}
+            timezone={location.timezone}
+            title={location.title}
+            address={location.address}
+          />
         </div>
 
         {/* Photo Upload */}
