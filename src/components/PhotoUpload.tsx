@@ -6,6 +6,7 @@ import { Upload, Camera, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { extractEXIFData, EXIFData } from '@/lib/exif'
+import heic2any from 'heic2any'
 
 interface PhotoUploadProps {
   onPhotoProcessed: (exifData: EXIFData, imageUrl: string) => void
@@ -32,27 +33,43 @@ export function PhotoUpload({ onPhotoProcessed }: PhotoUploadProps) {
     setIsProcessing(true)
     
     try {
-      // Create preview - for HEIC files, we'll show a placeholder
+      // Create preview - convert HEIC files to displayable format
       let imageUrl: string
       if (file.type === 'image/heic' || file.name.toLowerCase().endsWith('.heic') || 
           file.type === 'image/heif' || file.name.toLowerCase().endsWith('.heif')) {
-        // For HEIC files, create a data URL with a placeholder
-        imageUrl = 'data:image/svg+xml;base64,' + btoa(`
-          <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
-            <rect width="100%" height="100%" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2" stroke-dasharray="5,5"/>
-            <circle cx="200" cy="120" r="30" fill="#3b82f6" opacity="0.1"/>
-            <text x="200" y="120" text-anchor="middle" dy=".3em" font-family="Arial" font-size="24" fill="#3b82f6">CAMERA</text>
-            <text x="200" y="160" text-anchor="middle" dy=".3em" font-family="Arial" font-size="16" font-weight="bold" fill="#374151">
-              HEIC Preview Not Available
-            </text>
-            <text x="200" y="180" text-anchor="middle" dy=".3em" font-family="Arial" font-size="12" fill="#6b7280">
-              ${file.name}
-            </text>
-            <text x="200" y="200" text-anchor="middle" dy=".3em" font-family="Arial" font-size="10" fill="#9ca3af">
-              EXIF data will still be extracted
-            </text>
-          </svg>
-        `)
+        // Convert HEIC to JPEG for preview
+        console.log('Converting HEIC file to JPEG for preview...')
+        try {
+          const convertedBlob = await heic2any({
+            blob: file,
+            toType: 'image/jpeg',
+            quality: 0.8
+          })
+          
+          // heic2any returns an array, take the first item
+          const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob
+          imageUrl = URL.createObjectURL(blob)
+          console.log('HEIC conversion successful')
+        } catch (conversionError) {
+          console.warn('HEIC conversion failed, using placeholder:', conversionError)
+          // Fallback to placeholder if conversion fails
+          imageUrl = 'data:image/svg+xml;base64,' + btoa(`
+            <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+              <rect width="100%" height="100%" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2" stroke-dasharray="5,5"/>
+              <circle cx="200" cy="120" r="30" fill="#3b82f6" opacity="0.1"/>
+              <text x="200" y="120" text-anchor="middle" dy=".3em" font-family="Arial" font-size="24" fill="#3b82f6">CAMERA</text>
+              <text x="200" y="160" text-anchor="middle" dy=".3em" font-family="Arial" font-size="16" font-weight="bold" fill="#374151">
+                HEIC Preview Not Available
+              </text>
+              <text x="200" y="180" text-anchor="middle" dy=".3em" font-family="Arial" font-size="12" fill="#6b7280">
+                ${file.name}
+              </text>
+              <text x="200" y="200" text-anchor="middle" dy=".3em" font-family="Arial" font-size="10" fill="#9ca3af">
+                EXIF data will still be extracted
+              </text>
+            </svg>
+          `)
+        }
       } else {
         imageUrl = URL.createObjectURL(file)
       }
