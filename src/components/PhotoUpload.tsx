@@ -10,13 +10,104 @@ import { extractEXIFData, EXIFData } from '@/lib/exif'
 
 interface PhotoUploadProps {
   onPhotoProcessed: (exifData: EXIFData, imageUrl: string) => void
+  onMultiplePhotosProcessed: (photos: Array<{exifData: EXIFData, imageUrl: string}>) => void
 }
 
-export function PhotoUpload({ onPhotoProcessed }: PhotoUploadProps) {
+export function PhotoUpload({ onPhotoProcessed, onMultiplePhotosProcessed }: PhotoUploadProps) {
   const [isDragOver, setIsDragOver] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [preview, setPreview] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleMultipleFiles = async (files: FileList) => {
+    const fileArray = Array.from(files)
+    console.log('Processing multiple files:', fileArray.length, 'files')
+    setIsProcessing(true)
+    
+    try {
+      const processedPhotos = []
+      
+      for (const file of fileArray) {
+        // Check if it's an image file (including HEIC)
+        const isImage = file.type.startsWith('image/') || 
+                       file.name.toLowerCase().endsWith('.heic') || 
+                       file.name.toLowerCase().endsWith('.heif')
+        
+        if (!isImage) {
+          console.log('Skipping non-image file:', file.name)
+          continue
+        }
+
+        console.log('Processing file:', file.name, 'Type:', file.type, 'Size:', file.size)
+        
+        // Create preview - convert HEIC files to displayable format
+        let imageUrl: string
+        if (file.type === 'image/heic' || file.name.toLowerCase().endsWith('.heic') || 
+            file.type === 'image/heif' || file.name.toLowerCase().endsWith('.heif')) {
+          // Convert HEIC to JPEG for preview using heic-to library
+          console.log('HEIC file detected, converting to JPEG for preview...', file.name, file.type, file.size)
+          try {
+            // Dynamic import to avoid SSR issues
+            const { heicTo } = await import('heic-to')
+            console.log('heic-to library loaded successfully')
+            
+            // Convert HEIC to JPEG
+            const jpegBlob = await heicTo({
+              blob: file,
+              type: 'image/jpeg',
+              quality: 0.8
+            })
+            
+            console.log('HEIC conversion result:', jpegBlob, 'Type:', jpegBlob.type, 'Size:', jpegBlob.size)
+            
+            imageUrl = URL.createObjectURL(jpegBlob)
+            console.log('HEIC conversion successful, imageUrl:', imageUrl)
+          } catch (conversionError) {
+            console.error('HEIC conversion failed:', conversionError)
+            // Fallback to placeholder if conversion fails
+            imageUrl = 'data:image/svg+xml;base64,' + btoa(`
+              <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+                <rect width="100%" height="100%" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2" stroke-dasharray="5,5"/>
+                <circle cx="200" cy="120" r="30" fill="#3b82f6" opacity="0.1"/>
+                <text x="200" y="120" text-anchor="middle" dy=".3em" font-family="Arial" font-size="24" fill="#3b82f6">CAMERA</text>
+                <text x="200" y="160" text-anchor="middle" dy=".3em" font-family="Arial" font-size="16" font-weight="bold" fill="#374151">
+                  HEIC Preview Not Available
+                </text>
+                <text x="200" y="180" text-anchor="middle" dy=".3em" font-family="Arial" font-size="12" fill="#6b7280">
+                  ${file.name}
+                </text>
+                <text x="200" y="200" text-anchor="middle" dy=".3em" font-family="Arial" font-size="10" fill="#9ca3af">
+                  EXIF data will still be extracted
+                </text>
+              </svg>
+            `)
+            console.log('HEIC placeholder created as fallback')
+          }
+        } else {
+          imageUrl = URL.createObjectURL(file)
+        }
+
+        // Extract EXIF data
+        console.log('Starting EXIF extraction for:', file.name)
+        const exifData = await extractEXIFData(file)
+        console.log('EXIF extraction completed for:', file.name, exifData)
+        
+        processedPhotos.push({
+          exifData,
+          imageUrl
+        })
+      }
+      
+      console.log('All photos processed:', processedPhotos.length)
+      onMultiplePhotosProcessed(processedPhotos)
+      
+    } catch (error) {
+      console.error('Error processing images:', error)
+      alert('Error processing images. Please try again.')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
 
   const handleFile = async (file: File) => {
     // Check if it's an image file (including HEIC)
@@ -98,16 +189,24 @@ export function PhotoUpload({ onPhotoProcessed }: PhotoUploadProps) {
     e.preventDefault()
     setIsDragOver(false)
     
-    const files = Array.from(e.dataTransfer.files)
+    const files = e.dataTransfer.files
     if (files.length > 0) {
-      handleFile(files[0])
+      if (files.length === 1) {
+        handleFile(files[0])
+      } else {
+        handleMultipleFiles(files)
+      }
     }
   }
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (files && files.length > 0) {
-      handleFile(files[0])
+      if (files.length === 1) {
+        handleFile(files[0])
+      } else {
+        handleMultipleFiles(files)
+      }
     }
   }
 
@@ -140,12 +239,12 @@ export function PhotoUpload({ onPhotoProcessed }: PhotoUploadProps) {
                 <Camera className="h-8 w-8 text-blue-600" />
               </div>
                   <div>
-                    <h3 className="text-lg font-semibold">Upload a Photo</h3>
+                    <h3 className="text-lg font-semibold">Upload Photos</h3>
                     <p className="text-gray-600">
-                      Drag and drop an image here, or click to browse
+                      Drag and drop images here, or click to browse
                     </p>
                     <p className="text-sm text-gray-500 mt-1">
-                      Supports JPEG, PNG, HEIC, and other image formats
+                      Supports JPEG, PNG, HEIC, and other image formats. You can select multiple files at once.
                     </p>
                   </div>
               <Button
@@ -185,6 +284,7 @@ export function PhotoUpload({ onPhotoProcessed }: PhotoUploadProps) {
               ref={fileInputRef}
               type="file"
               accept="image/*,.heic,.heif"
+              multiple
               onChange={handleFileInput}
               className="hidden"
             />
