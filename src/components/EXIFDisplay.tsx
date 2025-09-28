@@ -22,7 +22,7 @@ function CollapsibleSection({ title, icon, children, defaultOpen = false }: Coll
   const [isOpen, setIsOpen] = useState(defaultOpen)
 
   return (
-    <div className="border-b border-gray-200 last:border-b-0">
+    <div className="border-b border-gray-300 last:border-b-0">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between p-3 hover:bg-gray-50 transition-colors"

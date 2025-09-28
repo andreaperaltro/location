@@ -18,7 +18,12 @@ export function PhotoUpload({ onPhotoProcessed }: PhotoUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFile = async (file: File) => {
-    if (!file.type.startsWith('image/')) {
+    // Check if it's an image file (including HEIC)
+    const isImage = file.type.startsWith('image/') || 
+                   file.name.toLowerCase().endsWith('.heic') || 
+                   file.name.toLowerCase().endsWith('.heif')
+    
+    if (!isImage) {
       alert('Please select an image file')
       return
     }
@@ -27,8 +32,25 @@ export function PhotoUpload({ onPhotoProcessed }: PhotoUploadProps) {
     setIsProcessing(true)
     
     try {
-      // Create preview
-      const imageUrl = URL.createObjectURL(file)
+      // Create preview - for HEIC files, we'll show a placeholder
+      let imageUrl: string
+      if (file.type === 'image/heic' || file.name.toLowerCase().endsWith('.heic') || 
+          file.type === 'image/heif' || file.name.toLowerCase().endsWith('.heif')) {
+        // For HEIC files, create a data URL with a placeholder
+        imageUrl = 'data:image/svg+xml;base64,' + btoa(`
+          <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+            <rect width="100%" height="100%" fill="#f3f4f6"/>
+            <text x="50%" y="50%" text-anchor="middle" dy=".3em" font-family="Arial" font-size="16" fill="#6b7280">
+              HEIC Preview Not Available
+            </text>
+            <text x="50%" y="60%" text-anchor="middle" dy=".3em" font-family="Arial" font-size="12" fill="#9ca3af">
+              ${file.name}
+            </text>
+          </svg>
+        `)
+      } else {
+        imageUrl = URL.createObjectURL(file)
+      }
       setPreview(imageUrl)
 
       // Extract EXIF data
@@ -89,12 +111,15 @@ export function PhotoUpload({ onPhotoProcessed }: PhotoUploadProps) {
               <div className="p-4 rounded-full bg-blue-100">
                 <Camera className="h-8 w-8 text-blue-600" />
               </div>
-              <div>
-                <h3 className="text-lg font-semibold">Upload a Photo</h3>
-                <p className="text-gray-600">
-                  Drag and drop an image here, or click to browse
-                </p>
-              </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">Upload a Photo</h3>
+                    <p className="text-gray-600">
+                      Drag and drop an image here, or click to browse
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Supports JPEG, PNG, HEIC, and other image formats
+                    </p>
+                  </div>
               <Button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isProcessing}
@@ -128,13 +153,13 @@ export function PhotoUpload({ onPhotoProcessed }: PhotoUploadProps) {
           </div>
         )}
         
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileInput}
-          className="hidden"
-        />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,.heic,.heif"
+              onChange={handleFileInput}
+              className="hidden"
+            />
       </CardContent>
     </Card>
   )
