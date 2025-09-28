@@ -39,12 +39,17 @@ export function PhotoUpload({ onPhotoProcessed }: PhotoUploadProps) {
         // For HEIC files, create a data URL with a placeholder
         imageUrl = 'data:image/svg+xml;base64,' + btoa(`
           <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
-            <rect width="100%" height="100%" fill="#f3f4f6"/>
-            <text x="50%" y="50%" text-anchor="middle" dy=".3em" font-family="Arial" font-size="16" fill="#6b7280">
+            <rect width="100%" height="100%" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2" stroke-dasharray="5,5"/>
+            <circle cx="200" cy="120" r="30" fill="#3b82f6" opacity="0.1"/>
+            <text x="200" y="120" text-anchor="middle" dy=".3em" font-family="Arial" font-size="24" fill="#3b82f6">📱</text>
+            <text x="200" y="160" text-anchor="middle" dy=".3em" font-family="Arial" font-size="16" font-weight="bold" fill="#374151">
               HEIC Preview Not Available
             </text>
-            <text x="50%" y="60%" text-anchor="middle" dy=".3em" font-family="Arial" font-size="12" fill="#9ca3af">
+            <text x="200" y="180" text-anchor="middle" dy=".3em" font-family="Arial" font-size="12" fill="#6b7280">
               ${file.name}
+            </text>
+            <text x="200" y="200" text-anchor="middle" dy=".3em" font-family="Arial" font-size="10" fill="#9ca3af">
+              EXIF data will still be extracted
             </text>
           </svg>
         `)

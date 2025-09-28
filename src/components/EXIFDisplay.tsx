@@ -79,7 +79,7 @@ export function EXIFDisplay({ exifData }: EXIFDisplayProps) {
               <div className="flex gap-2 pt-2">
                 <Button asChild size="sm" className="h-7 text-xs">
                   <a
-                    href={generateGoogleMapsLink({ lat: exifData.gps.latitude, lng: exifData.gps.longitude })}
+                    href={generateGoogleMapsLink(exifData.gps.latitude, exifData.gps.longitude)}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -89,7 +89,7 @@ export function EXIFDisplay({ exifData }: EXIFDisplayProps) {
                 </Button>
                 <Button asChild variant="outline" size="sm" className="h-7 text-xs">
                   <a
-                    href={generateGoogleMapsLink({ lat: exifData.gps.latitude, lng: exifData.gps.longitude })}
+                    href={generateGoogleMapsLink(exifData.gps.latitude, exifData.gps.longitude)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:text-blue-800"

@@ -25,5 +25,5 @@ export function formatGPS(gps: { lat: number; lng: number }): string {
 }
 
 export function generateGoogleMapsLink(lat: number, lng: number): string {
-  return `https://www.google.com/maps?q=${lat},${lng}`
+  return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
 }
