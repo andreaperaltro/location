@@ -1,10 +1,56 @@
 import jsPDF from 'jspdf'
+import JSZip from 'jszip'
 import { PhotoData } from '@/app/page'
 import { DataFilter } from '@/components/DataFilter'
 import { formatDate, formatGPS, generateGoogleMapsLink } from './utils'
 import { formatSunTime, formatSunPosition } from './sun'
 
-export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Promise<void> {
+// Helper function to sanitize filename
+function sanitizeFilename(filename: string): string {
+  return filename
+    .replace(/[^a-z0-9]/gi, '_') // Replace non-alphanumeric characters with underscores
+    .replace(/_+/g, '_') // Replace multiple underscores with single underscore
+    .replace(/^_|_$/g, '') // Remove leading/trailing underscores
+    .substring(0, 100) // Limit length
+}
+
+// Helper function to create and download zip file
+async function createZipFile(photos: PhotoData[], pdfBlob: Blob, customTitle?: string): Promise<void> {
+  const zip = new JSZip()
+  
+  // Add PDF to zip
+  const pdfFilename = `${customTitle || 'Location Manager - Photo Report'}.pdf`
+  zip.file(pdfFilename, pdfBlob)
+  
+  // Add images to zip
+  for (let i = 0; i < photos.length; i++) {
+    const photo = photos[i]
+    const sanitizedTitle = sanitizeFilename(photo.title)
+    const imageFilename = `${i + 1}_${sanitizedTitle}.jpg`
+    
+    try {
+      const response = await fetch(photo.imageUrl)
+      const imageBlob = await response.blob()
+      zip.file(imageFilename, imageBlob)
+      console.log(`Added to zip: ${imageFilename}`)
+    } catch (error) {
+      console.error(`Error adding image ${i + 1} to zip:`, error)
+    }
+  }
+  
+  // Generate and download zip
+  const zipBlob = await zip.generateAsync({ type: 'blob' })
+  const url = window.URL.createObjectURL(zipBlob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `location-manager-export-${new Date().toISOString().split('T')[0]}.zip`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  window.URL.revokeObjectURL(url)
+}
+
+export async function exportToPDF(photos: PhotoData[], filters: DataFilter, customTitle?: string, customDescription?: string): Promise<void> {
   const pdf = new jsPDF('p', 'mm', 'a4')
   const pageWidth = pdf.internal.pageSize.getWidth()
   const pageHeight = pdf.internal.pageSize.getHeight()
@@ -31,10 +77,11 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Pro
     pdf.setFontSize(14)
     pdf.setFont('helvetica', 'bold')
     pdf.setTextColor(0, 0, 0)
-    const newY = addText(title, margin, y)
+    pdf.text(title, margin, y)
+    
     pdf.setLineWidth(0.5)
-    pdf.line(margin, newY + 2, pageWidth - margin, newY + 2)
-    return newY + sectionSpacing
+    pdf.line(margin, y + 2, pageWidth - margin, y + 2)
+    return y + sectionSpacing
   }
 
   // Helper function to add a data row
@@ -96,15 +143,18 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Pro
   pdf.setFontSize(20)
   pdf.setFont('helvetica', 'bold')
   pdf.setTextColor(0, 0, 0)
-  currentY = addText('Location Manager - Photo Report', margin, currentY)
+  const title = customTitle || 'Location Manager - Photo Report'
+  currentY = addText(title, margin, currentY)
   currentY += 10
 
-  // Add generation date
-  pdf.setFontSize(10)
-  pdf.setFont('helvetica', 'normal')
-  pdf.setTextColor(100, 100, 100)
-  currentY = addText(`Generated on: ${new Date().toLocaleString()}`, margin, currentY)
-  currentY += 15
+  // Add description if provided
+  if (customDescription && customDescription.trim()) {
+    pdf.setFontSize(12)
+    pdf.setFont('helvetica', 'normal')
+    pdf.setTextColor(60, 60, 60)
+    currentY = addText(customDescription.trim(), margin, currentY)
+    currentY += 15
+  }
 
   for (let i = 0; i < photos.length; i++) {
     const photo = photos[i]
@@ -129,26 +179,41 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Pro
 
     // Photo title section (always visible)
     dataY = addDataRow('Title', photo.title, dataStartX, dataY)
-    if (photo.isGeocoded) {
-      dataY = addDataRow('Source', 'GPS Coordinates (Geocoded)', dataStartX, dataY)
-    } else {
-      dataY = addDataRow('Source', 'Manual Entry', dataStartX, dataY)
-    }
     dataY += 5
 
-    // Location section
-    if (filters.location && photo.exifData.gps) {
-      pdf.setFontSize(12)
-      pdf.setFont('helvetica', 'bold')
-      pdf.setTextColor(0, 0, 0)
-      dataY = addText('Location', dataStartX, dataY, dataColumnWidth)
-      dataY += 3
-      
-      dataY = addDataRow('Coordinates', formatGPS({ lat: photo.exifData.gps.latitude, lng: photo.exifData.gps.longitude }), dataStartX, dataY)
+        // Location section
+        if (filters.location && photo.exifData.gps) {
+          pdf.setFontSize(12)
+          pdf.setFont('helvetica', 'bold')
+          pdf.setTextColor(0, 0, 0)
+          pdf.text('Location', dataStartX, dataY)
+          dataY += 6
+          
+          // Show address if this photo is geocoded
+          if (photo.isGeocoded) {
+            dataY = addDataRow('Address', photo.title, dataStartX, dataY)
+          }
+          
+          dataY = addDataRow('Coordinates', formatGPS({ lat: photo.exifData.gps.latitude, lng: photo.exifData.gps.longitude }), dataStartX, dataY)
       if (photo.exifData.gps.altitude) {
         dataY = addDataRow('Altitude', `${photo.exifData.gps.altitude.toFixed(2)} m`, dataStartX, dataY)
       }
-      dataY = addDataRow('Google Maps', generateGoogleMapsLink(photo.exifData.gps.latitude, photo.exifData.gps.longitude), dataStartX, dataY, true)
+          // Add Google Maps link as clickable text
+          pdf.setFontSize(10)
+          pdf.setFont('helvetica', 'bold')
+          pdf.setTextColor(0, 0, 0)
+          pdf.text('Google Maps:', dataStartX, dataY)
+          
+          pdf.setFont('helvetica', 'normal')
+          pdf.setTextColor(0, 0, 255)
+          const mapsLink = generateGoogleMapsLink(photo.exifData.gps.latitude, photo.exifData.gps.longitude)
+          const linkText = 'Click here'
+          const linkX = dataStartX + 25
+          pdf.text(linkText, linkX, dataY)
+          
+          // Add the actual link
+          pdf.link(linkX, dataY - 2, 30, 4, { url: mapsLink })
+          dataY += 4
       dataY += 5
     }
 
@@ -157,8 +222,8 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Pro
       pdf.setFontSize(12)
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(0, 0, 0)
-      dataY = addText('Date & Time', dataStartX, dataY, dataColumnWidth)
-      dataY += 3
+      pdf.text('Date & Time', dataStartX, dataY)
+      dataY += 6
       
       if (photo.exifData.dateTimeOriginal) {
         dataY = addDataRow('Original Date', formatDate(new Date(photo.exifData.dateTimeOriginal)), dataStartX, dataY)
@@ -174,8 +239,8 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Pro
       pdf.setFontSize(12)
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(0, 0, 0)
-      dataY = addText('Camera', dataStartX, dataY, dataColumnWidth)
-      dataY += 3
+      pdf.text('Camera', dataStartX, dataY)
+      dataY += 6
       
       if (photo.exifData.make) {
         dataY = addDataRow('Make', photo.exifData.make, dataStartX, dataY)
@@ -194,8 +259,8 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Pro
       pdf.setFontSize(12)
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(0, 0, 0)
-      dataY = addText('Exposure', dataStartX, dataY, dataColumnWidth)
-      dataY += 3
+      pdf.text('Exposure', dataStartX, dataY)
+      dataY += 6
       
       if (photo.exifData.exposure.aperture) {
         dataY = addDataRow('Aperture', `f/${photo.exifData.exposure.aperture.toFixed(1)}`, dataStartX, dataY)
@@ -217,8 +282,8 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Pro
       pdf.setFontSize(12)
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(0, 0, 0)
-      dataY = addText('Settings', dataStartX, dataY, dataColumnWidth)
-      dataY += 3
+      pdf.text('Settings', dataStartX, dataY)
+      dataY += 6
       
       if (photo.exifData.camera.focalLength) {
         dataY = addDataRow('Focal Length', `${photo.exifData.camera.focalLength.toFixed(0)}mm`, dataStartX, dataY)
@@ -240,8 +305,8 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Pro
       pdf.setFontSize(12)
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(0, 0, 0)
-      dataY = addText('Sun Data', dataStartX, dataY, dataColumnWidth)
-      dataY += 3
+      pdf.text('Sun Data', dataStartX, dataY)
+      dataY += 6
       
       dataY = addDataRow('Sunrise', formatSunTime(photo.exifData.sun.sunrise), dataStartX, dataY)
       dataY = addDataRow('Sunset', formatSunTime(photo.exifData.sun.sunset), dataStartX, dataY)
@@ -257,14 +322,14 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Pro
       pdf.setFontSize(12)
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(0, 0, 0)
-      dataY = addText('Image', dataStartX, dataY, dataColumnWidth)
-      dataY += 3
+      pdf.text('Image', dataStartX, dataY)
+      dataY += 6
       
       if (photo.exifData.image.width && photo.exifData.image.height) {
-        dataY = addDataRow('Dimensions', `${photo.exifData.image.width} × ${photo.exifData.image.height}`, dataStartX, dataY)
+        dataY = addDataRow('Dimensions', `${photo.exifData.image.width} x ${photo.exifData.image.height}`, dataStartX, dataY)
       }
       if (photo.exifData.image.xResolution && photo.exifData.image.yResolution) {
-        dataY = addDataRow('Resolution', `${photo.exifData.image.xResolution} × ${photo.exifData.image.yResolution} DPI`, dataStartX, dataY)
+        dataY = addDataRow('Resolution', `${photo.exifData.image.xResolution} x ${photo.exifData.image.yResolution} DPI`, dataStartX, dataY)
       }
       if (photo.exifData.image.orientation) {
         dataY = addDataRow('Orientation', photo.exifData.image.orientation.toString(), dataStartX, dataY)
@@ -276,7 +341,7 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Pro
     currentY = Math.max(imageBottomY, dataY) + 10
   }
 
-  // Save the PDF
-  const fileName = `location-manager-report-${new Date().toISOString().split('T')[0]}.pdf`
-  pdf.save(fileName)
+  // Generate PDF blob and create zip file
+  const pdfBlob = pdf.output('blob')
+  await createZipFile(photos, pdfBlob, customTitle)
 }

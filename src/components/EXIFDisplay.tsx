@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { EXIFData } from '@/lib/exif'
 import { formatDate, formatGPS, generateGoogleMapsLink } from '@/lib/utils'
 import { formatSunTime, formatSunPosition } from '@/lib/sun'
-import { MapPin, Camera, Clock, Settings, Aperture, ImageIcon, ChevronDown, ChevronRight, Sun, Edit2, Save, X } from 'lucide-react'
+import { MapPin, Camera, Clock, Settings, Aperture, ImageIcon, ChevronDown, ChevronRight, Sun, Edit2, Save, X, Type } from 'lucide-react'
 import { DataFilter } from './DataFilter'
 
 interface EXIFDisplayProps {
@@ -87,13 +87,13 @@ export function EXIFDisplay({ exifData, filters, title, isGeocoded, onTitleChang
             {/* Photo Title */}
             <CollapsibleSection
               title="Photo Title"
-              icon={<Camera className="h-4 w-4 text-blue-600" />}
+              icon={<Edit2 className="h-4 w-4 text-blue-600" />}
               defaultOpen={true}
             >
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   {isGeocoded && (
-                    <MapPin className="h-4 w-4 text-green-600 flex-shrink-0" />
+                    <Type className="h-4 w-4 text-green-600 flex-shrink-0" />
                   )}
                   {isEditingTitle ? (
                     <input
@@ -150,18 +150,25 @@ export function EXIFDisplay({ exifData, filters, title, isGeocoded, onTitleChang
 
             {/* GPS Location */}
             {filters.location && exifData.gps && (
-          <CollapsibleSection
-            title="Location"
-            icon={<MapPin className="h-4 w-4 text-green-600" />}
-            defaultOpen={true}
-          >
-            <div className="space-y-2">
-              <div>
-                <p className="text-xs font-medium text-gray-600">Coordinates</p>
-                <p className="text-sm font-mono text-gray-900">
-                  {formatGPS({ lat: exifData.gps.latitude, lng: exifData.gps.longitude })}
-                </p>
-              </div>
+              <CollapsibleSection
+                title="Location"
+                icon={<MapPin className="h-4 w-4 text-green-600" />}
+                defaultOpen={true}
+              >
+                <div className="space-y-2">
+                  {/* Show address if this photo is geocoded (title contains the address) */}
+                  {isGeocoded && (
+                    <div>
+                      <p className="text-xs font-medium text-gray-600">Address</p>
+                      <p className="text-sm text-gray-900">{title}</p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-xs font-medium text-gray-600">Coordinates</p>
+                    <p className="text-sm font-mono text-gray-900">
+                      {formatGPS({ lat: exifData.gps.latitude, lng: exifData.gps.longitude })}
+                    </p>
+                  </div>
               {exifData.gps.altitude && (
                 <div>
                   <p className="text-xs font-medium text-gray-600">Altitude</p>

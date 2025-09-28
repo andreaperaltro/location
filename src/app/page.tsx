@@ -25,12 +25,14 @@ export default function Home() {
   const [filters, setFilters] = useState<DataFilterType>({
     location: true,
     dateTime: true,
-    camera: true,
-    exposure: true,
-    settings: true,
-    sun: true,
-    image: true,
+    camera: false,
+    exposure: false,
+    settings: false,
+    sun: false,
+    image: false,
   })
+  const [reportTitle, setReportTitle] = useState('Location Manager - Photo Report')
+  const [reportDescription, setReportDescription] = useState('')
 
   const handlePhotoProcessed = async (data: EXIFData, url: string) => {
     const id = Date.now().toString()
@@ -120,7 +122,7 @@ export default function Home() {
 
   const handleExportPDF = async () => {
     try {
-      await exportToPDF(photos, filters)
+      await exportToPDF(photos, filters, reportTitle, reportDescription)
     } catch (error) {
       console.error('Error exporting PDF:', error)
       alert('Error exporting PDF. Please try again.')
@@ -139,18 +141,59 @@ export default function Home() {
           </p>
         </div>
 
-        {photos.length === 0 ? (
-          <PhotoUpload 
-            onPhotoProcessed={handlePhotoProcessed}
-            onMultiplePhotosProcessed={handleMultiplePhotosProcessed}
-          />
-        ) : (
-          <div className="space-y-8">
-            {/* Data Filter */}
-            <DataFilter 
-              filters={filters} 
-              onFiltersChange={setFilters} 
-            />
+            {photos.length === 0 ? (
+              <PhotoUpload 
+                onPhotoProcessed={handlePhotoProcessed}
+                onMultiplePhotosProcessed={handleMultiplePhotosProcessed}
+              />
+            ) : (
+              <div className="space-y-8">
+                {/* Report Settings and Data Filter in a single row */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Report Settings - Left */}
+                  <Card className="w-full">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <Download className="h-4 w-4 text-blue-600" />
+                        Report Settings
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <label htmlFor="report-title" className="block text-sm font-medium text-gray-700 mb-2">
+                          Report Title
+                        </label>
+                        <input
+                          id="report-title"
+                          type="text"
+                          value={reportTitle}
+                          onChange={(e) => setReportTitle(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="Enter report title..."
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="report-description" className="block text-sm font-medium text-gray-700 mb-2">
+                          Report Description (Optional)
+                        </label>
+                        <textarea
+                          id="report-description"
+                          value={reportDescription}
+                          onChange={(e) => setReportDescription(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="Enter report description..."
+                          rows={3}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Data Filter - Right */}
+                  <DataFilter 
+                    filters={filters} 
+                    onFiltersChange={setFilters} 
+                  />
+                </div>
             {/* Photos List */}
             {photos.map((photo, index) => (
               <div key={photo.id} className="space-y-4">
