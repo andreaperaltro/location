@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import Image from 'next/image'
 import { Upload, Camera, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -104,10 +105,13 @@ export function PhotoUpload({ onPhotoProcessed }: PhotoUploadProps) {
         ) : (
           <div className="space-y-4">
             <div className="relative">
-              <img
+              <Image
                 src={preview}
                 alt="Preview"
+                width={800}
+                height={600}
                 className="w-full h-auto max-h-96 object-contain rounded-lg"
+                unoptimized
               />
               <Button
                 variant="destructive"

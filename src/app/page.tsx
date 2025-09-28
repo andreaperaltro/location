@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { PhotoUpload } from '@/components/PhotoUpload'
 import { EXIFDisplay } from '@/components/EXIFDisplay'
 import { EXIFData } from '@/lib/exif'
@@ -50,10 +51,13 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <div className="relative">
-                  <img
+                  <Image
                     src={imageUrl!}
                     alt="Uploaded photo"
+                    width={800}
+                    height={600}
                     className="w-full h-auto max-h-96 object-contain rounded-lg"
+                    unoptimized
                   />
                 </div>
                 <button
@@ -66,7 +70,7 @@ export default function Home() {
             </Card>
 
             {/* EXIF Data Display */}
-            <EXIFDisplay exifData={exifData} imageUrl={imageUrl!} />
+            <EXIFDisplay exifData={exifData} />
           </div>
         )}
 

@@ -8,10 +8,9 @@ import { MapPin, Camera, Clock, Settings, ExternalLink } from 'lucide-react'
 
 interface EXIFDisplayProps {
   exifData: EXIFData
-  imageUrl: string
 }
 
-export function EXIFDisplay({ exifData, imageUrl }: EXIFDisplayProps) {
+export function EXIFDisplay({ exifData }: EXIFDisplayProps) {
   const hasLocation = exifData.gps?.latitude && exifData.gps?.longitude
   const hasDateTime = exifData.dateTimeOriginal || exifData.dateTime
 
