@@ -37,25 +37,45 @@ export function PhotoUpload({ onPhotoProcessed }: PhotoUploadProps) {
       let imageUrl: string
       if (file.type === 'image/heic' || file.name.toLowerCase().endsWith('.heic') || 
           file.type === 'image/heif' || file.name.toLowerCase().endsWith('.heif')) {
-        // For HEIC files, show a placeholder since browser can't display them directly
-        console.log('HEIC file detected, creating placeholder preview...', file.name, file.type, file.size)
-        imageUrl = 'data:image/svg+xml;base64,' + btoa(`
-          <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
-            <rect width="100%" height="100%" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2" stroke-dasharray="5,5"/>
-            <circle cx="200" cy="120" r="30" fill="#3b82f6" opacity="0.1"/>
-            <text x="200" y="120" text-anchor="middle" dy=".3em" font-family="Arial" font-size="24" fill="#3b82f6">CAMERA</text>
-            <text x="200" y="160" text-anchor="middle" dy=".3em" font-family="Arial" font-size="16" font-weight="bold" fill="#374151">
-              HEIC Preview Not Available
-            </text>
-            <text x="200" y="180" text-anchor="middle" dy=".3em" font-family="Arial" font-size="12" fill="#6b7280">
-              ${file.name}
-            </text>
-            <text x="200" y="200" text-anchor="middle" dy=".3em" font-family="Arial" font-size="10" fill="#9ca3af">
-              EXIF data will still be extracted
-            </text>
-          </svg>
-        `)
-        console.log('HEIC placeholder created successfully')
+        // Convert HEIC to JPEG for preview using heic-to library
+        console.log('HEIC file detected, converting to JPEG for preview...', file.name, file.type, file.size)
+        try {
+          // Dynamic import to avoid SSR issues
+          const { heicTo } = await import('heic-to')
+          console.log('heic-to library loaded successfully')
+          
+          // Convert HEIC to JPEG
+          const jpegBlob = await heicTo({
+            blob: file,
+            type: 'image/jpeg',
+            quality: 0.8
+          })
+          
+          console.log('HEIC conversion result:', jpegBlob, 'Type:', jpegBlob.type, 'Size:', jpegBlob.size)
+          
+          imageUrl = URL.createObjectURL(jpegBlob)
+          console.log('HEIC conversion successful, imageUrl:', imageUrl)
+        } catch (conversionError) {
+          console.error('HEIC conversion failed:', conversionError)
+          // Fallback to placeholder if conversion fails
+          imageUrl = 'data:image/svg+xml;base64,' + btoa(`
+            <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+              <rect width="100%" height="100%" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2" stroke-dasharray="5,5"/>
+              <circle cx="200" cy="120" r="30" fill="#3b82f6" opacity="0.1"/>
+              <text x="200" y="120" text-anchor="middle" dy=".3em" font-family="Arial" font-size="24" fill="#3b82f6">CAMERA</text>
+              <text x="200" y="160" text-anchor="middle" dy=".3em" font-family="Arial" font-size="16" font-weight="bold" fill="#374151">
+                HEIC Preview Not Available
+              </text>
+              <text x="200" y="180" text-anchor="middle" dy=".3em" font-family="Arial" font-size="12" fill="#6b7280">
+                ${file.name}
+              </text>
+              <text x="200" y="200" text-anchor="middle" dy=".3em" font-family="Arial" font-size="10" fill="#9ca3af">
+                EXIF data will still be extracted
+              </text>
+            </svg>
+          `)
+          console.log('HEIC placeholder created as fallback')
+        }
       } else {
         imageUrl = URL.createObjectURL(file)
       }
