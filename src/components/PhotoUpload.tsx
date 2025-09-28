@@ -23,6 +23,7 @@ export function PhotoUpload({ onPhotoProcessed }: PhotoUploadProps) {
       return
     }
 
+    console.log('Processing file:', file.name, 'Type:', file.type, 'Size:', file.size)
     setIsProcessing(true)
     
     try {
@@ -31,7 +32,9 @@ export function PhotoUpload({ onPhotoProcessed }: PhotoUploadProps) {
       setPreview(imageUrl)
 
       // Extract EXIF data
+      console.log('Starting EXIF extraction...')
       const exifData = await extractEXIFData(file)
+      console.log('EXIF extraction completed:', exifData)
       onPhotoProcessed(exifData, imageUrl)
     } catch (error) {
       console.error('Error processing image:', error)

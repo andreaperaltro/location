@@ -40,14 +40,23 @@ export interface EXIFData {
 export function extractEXIFData(file: File): Promise<EXIFData> {
   return new Promise((resolve, reject) => {
     const imageUrl = URL.createObjectURL(file)
+    console.log('Extracting EXIF data from:', file.name, 'URL:', imageUrl)
+    
     EXIF.getData(imageUrl, function(this: HTMLImageElement) {
       try {
+        console.log('EXIF.getData callback called')
         const exifData: EXIFData = {}
 
         // Basic camera info
         exifData.make = EXIF.getTag(this, 'Make')
         exifData.model = EXIF.getTag(this, 'Model')
         exifData.software = EXIF.getTag(this, 'Software')
+        
+        console.log('Basic info extracted:', {
+          make: exifData.make,
+          model: exifData.model,
+          software: exifData.software
+        })
 
         // Date/Time
         exifData.dateTime = EXIF.getTag(this, 'DateTime')
@@ -60,6 +69,8 @@ export function extractEXIFData(file: File): Promise<EXIFData> {
         const lng = EXIF.getTag(this, 'GPSLongitude')
         const lngRef = EXIF.getTag(this, 'GPSLongitudeRef')
         const alt = EXIF.getTag(this, 'GPSAltitude')
+        
+        console.log('GPS data:', { lat, latRef, lng, lngRef, alt })
 
         if (lat && lng && latRef && lngRef) {
           const latitude = convertDMSToDD(lat, latRef)
@@ -75,6 +86,8 @@ export function extractEXIFData(file: File): Promise<EXIFData> {
           if (alt) {
             exifData.gps.altitude = alt
           }
+          
+          console.log('GPS coordinates converted:', { latitude, longitude })
         }
 
         // Exposure settings
@@ -104,8 +117,10 @@ export function extractEXIFData(file: File): Promise<EXIFData> {
           yResolution: EXIF.getTag(this, 'YResolution')
         }
 
+        console.log('Final EXIF data:', exifData)
         resolve(exifData)
       } catch (error) {
+        console.error('Error in EXIF extraction:', error)
         reject(error)
       } finally {
         URL.revokeObjectURL(imageUrl)
