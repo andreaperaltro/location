@@ -64,16 +64,41 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
   const imageMaxHeight = 80 // Increased height to fill column better
   const dataColumnWidth = 135 // 75% of page width (180mm * 0.75 = 135mm)
 
-  // Helper function to add text with word wrapping
+  // Helper function to add text with word wrapping and page overflow handling
   const addText = (text: string, x: number, y: number, maxWidth?: number, options: Record<string, unknown> = {}) => {
     const textMaxWidth = maxWidth || (contentWidth - (x - margin))
     const lines = pdf.splitTextToSize(text, textMaxWidth)
+    const textHeight = lines.length * lineHeight
+    
+    // Check if text will fit on current page
+    if (y + textHeight > pageHeight - margin) {
+      pdf.addPage()
+      const newY = margin
+      pdf.text(lines, x, newY, options)
+      return newY + textHeight
+    }
+    
     pdf.text(lines, x, y, options)
-    return y + (lines.length * lineHeight)
+    return y + textHeight
   }
 
-  // Helper function to add a section header
+  // Helper function to add a section header with page overflow handling
   const addSectionHeader = (title: string, y: number) => {
+    // Check if we need a new page for the section header
+    const estimatedHeight = 15 // Approximate height for section header
+    if (y + estimatedHeight > pageHeight - margin) {
+      pdf.addPage()
+      const newY = margin
+      pdf.setFontSize(14)
+      pdf.setFont('helvetica', 'bold')
+      pdf.setTextColor(0, 0, 0)
+      pdf.text(title, margin, newY)
+      
+      pdf.setLineWidth(0.5)
+      pdf.line(margin, newY + 2, pageWidth - margin, newY + 2)
+      return newY + sectionSpacing
+    }
+
     pdf.setFontSize(14)
     pdf.setFont('helvetica', 'bold')
     pdf.setTextColor(0, 0, 0)
@@ -84,8 +109,38 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
     return y + sectionSpacing
   }
 
-  // Helper function to add a data row
+  // Helper function to check if we need a new page
+  const checkPageOverflow = (requiredHeight: number) => {
+    if (currentY + requiredHeight > pageHeight - margin) {
+      pdf.addPage()
+      currentY = margin
+      return true
+    }
+    return false
+  }
+
+  // Helper function to add a data row with page overflow handling
   const addDataRow = (label: string, value: string, x: number, y: number, isLink: boolean = false) => {
+    // Check if we need a new page before adding content
+    const estimatedHeight = 8 // Approximate height for a data row
+    if (y + estimatedHeight > pageHeight - margin) {
+      pdf.addPage()
+      const newY = margin
+      pdf.setFontSize(10)
+      pdf.setFont('helvetica', 'bold')
+      pdf.setTextColor(0, 0, 0)
+      addText(`${label}:`, x, newY, dataColumnWidth)
+      
+      pdf.setFont('helvetica', 'normal')
+      if (isLink) {
+        pdf.setTextColor(0, 0, 255)
+      } else {
+        pdf.setTextColor(0, 0, 0)
+      }
+      const finalY = addText(value, x + 25, newY, dataColumnWidth - 25)
+      return finalY + 2
+    }
+
     pdf.setFontSize(10)
     pdf.setFont('helvetica', 'bold')
     pdf.setTextColor(0, 0, 0)
@@ -99,6 +154,29 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
     }
     const newY = addText(value, x + 25, y, dataColumnWidth - 25)
     return newY + 2
+  }
+
+  // Helper function to add a section with proper page overflow handling
+  const addSection = (title: string, x: number, y: number, content: () => number) => {
+    // Check if we need a new page for the section
+    const estimatedHeight = 20 // Approximate height for section header + some content
+    if (y + estimatedHeight > pageHeight - margin) {
+      pdf.addPage()
+      const newY = margin
+      pdf.setFontSize(12)
+      pdf.setFont('helvetica', 'bold')
+      pdf.setTextColor(0, 0, 0)
+      pdf.text(title, x, newY)
+      const finalY = newY + 6
+      return content()
+    }
+
+    pdf.setFontSize(12)
+    pdf.setFont('helvetica', 'bold')
+    pdf.setTextColor(0, 0, 0)
+    pdf.text(title, x, y)
+    const contentY = y + 6
+    return content()
   }
 
   // Helper function to add an image to the PDF
@@ -159,8 +237,9 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
   for (let i = 0; i < photos.length; i++) {
     const photo = photos[i]
     
-    // Check if we need a new page
-    if (currentY > pageHeight - 100) {
+    // Check if we need a new page for the entire photo section
+    const estimatedPhotoHeight = 100 // Approximate height for photo + data
+    if (currentY + estimatedPhotoHeight > pageHeight - margin) {
       pdf.addPage()
       currentY = margin
     }
