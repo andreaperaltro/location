@@ -30,7 +30,21 @@ export async function reverseGeocode(latitude: number, longitude: number): Promi
   }
 }
 
-function formatAddress(data: any): string {
+interface NominatimResponse {
+  display_name: string
+  address?: {
+    house_number?: string
+    road?: string
+    city?: string
+    town?: string
+    village?: string
+    state?: string
+    county?: string
+    country?: string
+  }
+}
+
+function formatAddress(data: NominatimResponse): string {
   const components = data.address || {}
   
   // Build a readable address

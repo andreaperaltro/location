@@ -1,5 +1,4 @@
 import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
 import { PhotoData } from '@/app/page'
 import { DataFilter } from '@/components/DataFilter'
 import { formatDate, formatGPS, generateGoogleMapsLink } from './utils'
@@ -20,7 +19,7 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Pro
   const dataColumnWidth = 135 // 75% of page width (180mm * 0.75 = 135mm)
 
   // Helper function to add text with word wrapping
-  const addText = (text: string, x: number, y: number, maxWidth?: number, options: any = {}) => {
+  const addText = (text: string, x: number, y: number, maxWidth?: number, options: Record<string, unknown> = {}) => {
     const textMaxWidth = maxWidth || (contentWidth - (x - margin))
     const lines = pdf.splitTextToSize(text, textMaxWidth)
     pdf.text(lines, x, y, options)
