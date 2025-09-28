@@ -6,7 +6,7 @@ import { Upload, Camera, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { extractEXIFData, EXIFData } from '@/lib/exif'
-import heic2any from 'heic2any'
+// Dynamic import for client-side only
 
 interface PhotoUploadProps {
   onPhotoProcessed: (exifData: EXIFData, imageUrl: string) => void
@@ -40,6 +40,8 @@ export function PhotoUpload({ onPhotoProcessed }: PhotoUploadProps) {
         // Convert HEIC to JPEG for preview
         console.log('Converting HEIC file to JPEG for preview...')
         try {
+          // Dynamic import to avoid SSR issues
+          const heic2any = (await import('heic2any')).default
           const convertedBlob = await heic2any({
             blob: file,
             toType: 'image/jpeg',
