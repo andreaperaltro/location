@@ -42,6 +42,10 @@ export function extractEXIFData(file: File): Promise<EXIFData> {
     const imageUrl = URL.createObjectURL(file)
     console.log('Extracting EXIF data from:', file.name, 'URL:', imageUrl)
     
+    // Create an image element to load the file
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    
     // Set a timeout to handle cases where EXIF.getData doesn't call the callback
     const timeout = setTimeout(() => {
       console.log('EXIF extraction timeout - resolving with empty data')
@@ -49,11 +53,13 @@ export function extractEXIFData(file: File): Promise<EXIFData> {
       resolve({})
     }, 5000)
     
-    EXIF.getData(imageUrl, function(this: HTMLImageElement) {
-      try {
-        console.log('EXIF.getData callback called')
-        clearTimeout(timeout)
-        const exifData: EXIFData = {}
+    img.onload = () => {
+      console.log('Image loaded, extracting EXIF data')
+      EXIF.getData(img, function(this: HTMLImageElement) {
+        try {
+          console.log('EXIF.getData callback called')
+          clearTimeout(timeout)
+          const exifData: EXIFData = {}
 
         // Basic camera info
         exifData.make = EXIF.getTag(this, 'Make')
@@ -135,6 +141,16 @@ export function extractEXIFData(file: File): Promise<EXIFData> {
         URL.revokeObjectURL(imageUrl)
       }
     })
+    }
+    
+    img.onerror = () => {
+      console.error('Failed to load image')
+      clearTimeout(timeout)
+      URL.revokeObjectURL(imageUrl)
+      reject(new Error('Failed to load image'))
+    }
+    
+    img.src = imageUrl
   })
 }
 
