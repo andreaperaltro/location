@@ -38,22 +38,28 @@ export function PhotoUpload({ onPhotoProcessed }: PhotoUploadProps) {
       if (file.type === 'image/heic' || file.name.toLowerCase().endsWith('.heic') || 
           file.type === 'image/heif' || file.name.toLowerCase().endsWith('.heif')) {
         // Convert HEIC to JPEG for preview
-        console.log('Converting HEIC file to JPEG for preview...')
+        console.log('Converting HEIC file to JPEG for preview...', file.name, file.type, file.size)
         try {
           // Dynamic import to avoid SSR issues
           const heic2any = (await import('heic2any')).default
+          console.log('heic2any library loaded successfully')
+          
           const convertedBlob = await heic2any({
             blob: file,
             toType: 'image/jpeg',
             quality: 0.8
           })
           
+          console.log('Conversion result:', convertedBlob)
+          
           // heic2any returns an array, take the first item
           const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob
+          console.log('Final blob:', blob, 'Type:', blob.type, 'Size:', blob.size)
+          
           imageUrl = URL.createObjectURL(blob)
-          console.log('HEIC conversion successful')
+          console.log('HEIC conversion successful, imageUrl:', imageUrl)
         } catch (conversionError) {
-          console.warn('HEIC conversion failed, using placeholder:', conversionError)
+          console.error('HEIC conversion failed:', conversionError)
           // Fallback to placeholder if conversion fails
           imageUrl = 'data:image/svg+xml;base64,' + btoa(`
             <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
