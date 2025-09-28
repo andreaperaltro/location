@@ -240,7 +240,7 @@ export function PhotoUpload({ onPhotoProcessed, onMultiplePhotosProcessed }: Pho
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-primary">Upload Photos</h3>
-                    <p className="text-secondary">
+                    <p className="text-gray-900 dark:text-gray-300">
                       Drag and drop images here, or click to browse
                     </p>
                     <p className="text-sm text-muted mt-1">

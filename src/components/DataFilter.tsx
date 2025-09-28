@@ -74,7 +74,7 @@ export function DataFilter({ filters, onFiltersChange }: DataFilterProps) {
         <CardTitle className="flex items-center justify-between">
           <span className="text-lg text-primary">Data Filters</span>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-secondary">
+            <span className="text-sm text-gray-900 dark:text-gray-300">
               {activeCount} of {filterOptions.length} sections active
             </span>
             <Button

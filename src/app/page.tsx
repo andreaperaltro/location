@@ -138,7 +138,7 @@ export default function Home() {
                 <h1 className="text-4xl font-bold text-primary mb-4">
                   Location Manager
                 </h1>
-                <p className="text-lg text-secondary">
+                <p className="text-lg text-gray-900 dark:text-gray-300">
                   Extract location and EXIF data from your photos
                 </p>
               </div>
