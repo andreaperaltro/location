@@ -1,4 +1,5 @@
 import { parse } from 'exifr'
+import { calculateSunData, SunData } from './sun'
 
 export interface EXIFData {
   make?: string
@@ -35,6 +36,7 @@ export interface EXIFData {
     xResolution?: number
     yResolution?: number
   }
+  sun?: SunData
 }
 
 export async function extractEXIFData(file: File): Promise<EXIFData> {
@@ -120,8 +122,26 @@ export async function extractEXIFData(file: File): Promise<EXIFData> {
       yResolution: exif.YResolution || exif.yResolution
     }
 
-    console.log('Final EXIF data:', exifData)
-    return exifData
+        // Calculate sun data if we have GPS coordinates and date
+        if (exifData.gps && (exifData.dateTimeOriginal || exifData.dateTime)) {
+          try {
+            const photoDate = new Date(exifData.dateTimeOriginal || exifData.dateTime!)
+            console.log('Calculating sun data for:', photoDate, 'at', exifData.gps.latitude, exifData.gps.longitude)
+            
+            exifData.sun = calculateSunData(
+              exifData.gps.latitude,
+              exifData.gps.longitude,
+              photoDate
+            )
+            
+            console.log('Sun data calculated:', exifData.sun)
+          } catch (sunError) {
+            console.error('Error calculating sun data:', sunError)
+          }
+        }
+
+        console.log('Final EXIF data:', exifData)
+        return exifData
     
   } catch (error) {
     console.error('Error extracting EXIF data:', error)

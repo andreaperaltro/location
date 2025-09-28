@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { EXIFData } from '@/lib/exif'
 import { formatDate, formatGPS, generateGoogleMapsLink } from '@/lib/utils'
-import { MapPin, Camera, Clock, Settings, ExternalLink, Aperture, ImageIcon, ChevronDown, ChevronRight } from 'lucide-react'
+import { formatSunTime, formatSunPosition } from '@/lib/sun'
+import { MapPin, Camera, Clock, Settings, ExternalLink, Aperture, ImageIcon, ChevronDown, ChevronRight, Sun, Sunrise, Sunset } from 'lucide-react'
 
 interface EXIFDisplayProps {
   exifData: EXIFData
@@ -225,34 +226,76 @@ export function EXIFDisplay({ exifData }: EXIFDisplayProps) {
           </CollapsibleSection>
         )}
 
-        {/* Image Properties */}
-        {exifData.image && (
-          <CollapsibleSection
-            title="Image"
-            icon={<ImageIcon className="h-4 w-4 text-cyan-600" />}
-          >
-            <div className="grid grid-cols-2 gap-3">
-              {exifData.image.width && exifData.image.height && (
-                <div>
-                  <p className="text-xs font-medium text-gray-600">Dimensions</p>
-                  <p className="text-sm font-mono text-gray-900">{exifData.image.width} × {exifData.image.height}</p>
+            {/* Sun Data */}
+            {exifData.sun && (
+              <CollapsibleSection
+                title="Sun Data"
+                icon={<Sun className="h-4 w-4 text-yellow-600" />}
+                defaultOpen={true}
+              >
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-xs font-medium text-gray-600">Sunrise</p>
+                      <p className="text-sm font-mono text-gray-900">{formatSunTime(exifData.sun.sunrise)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600">Sunset</p>
+                      <p className="text-sm font-mono text-gray-900">{formatSunTime(exifData.sun.sunset)}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-xs font-medium text-gray-600">Solar Noon</p>
+                      <p className="text-sm font-mono text-gray-900">{formatSunTime(exifData.sun.solarNoon)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600">Day Length</p>
+                      <p className="text-sm font-mono text-gray-900">{Math.floor(exifData.sun.dayLength / 60)}h {exifData.sun.dayLength % 60}m</p>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-600">Sun Position</p>
+                    <p className="text-sm text-gray-900">{formatSunPosition(exifData.sun.sunPosition.azimuth, exifData.sun.sunPosition.altitude)}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-3 h-3 rounded-full ${exifData.sun.isDaytime ? 'bg-yellow-400' : 'bg-blue-400'}`}></div>
+                    <p className="text-sm text-gray-900">
+                      {exifData.sun.isDaytime ? 'Daytime' : 'Nighttime'}
+                    </p>
+                  </div>
                 </div>
-              )}
-              {exifData.image.xResolution && exifData.image.yResolution && (
-                <div>
-                  <p className="text-xs font-medium text-gray-600">Resolution</p>
-                  <p className="text-sm font-mono text-gray-900">{exifData.image.xResolution} × {exifData.image.yResolution} DPI</p>
+              </CollapsibleSection>
+            )}
+
+            {/* Image Properties */}
+            {exifData.image && (
+              <CollapsibleSection
+                title="Image"
+                icon={<ImageIcon className="h-4 w-4 text-cyan-600" />}
+              >
+                <div className="grid grid-cols-2 gap-3">
+                  {exifData.image.width && exifData.image.height && (
+                    <div>
+                      <p className="text-xs font-medium text-gray-600">Dimensions</p>
+                      <p className="text-sm font-mono text-gray-900">{exifData.image.width} × {exifData.image.height}</p>
+                    </div>
+                  )}
+                  {exifData.image.xResolution && exifData.image.yResolution && (
+                    <div>
+                      <p className="text-xs font-medium text-gray-600">Resolution</p>
+                      <p className="text-sm font-mono text-gray-900">{exifData.image.xResolution} × {exifData.image.yResolution} DPI</p>
+                    </div>
+                  )}
+                  {exifData.image.orientation && (
+                    <div>
+                      <p className="text-xs font-medium text-gray-600">Orientation</p>
+                      <p className="text-sm text-gray-900">{exifData.image.orientation}</p>
+                    </div>
+                  )}
                 </div>
-              )}
-              {exifData.image.orientation && (
-                <div>
-                  <p className="text-xs font-medium text-gray-600">Orientation</p>
-                  <p className="text-sm text-gray-900">{exifData.image.orientation}</p>
-                </div>
-              )}
-            </div>
-          </CollapsibleSection>
-        )}
+              </CollapsibleSection>
+            )}
       </CardContent>
     </Card>
   )
