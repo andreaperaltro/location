@@ -77,6 +77,6 @@
   }
   
   .placeholder-muted::placeholder {
-    @apply text-gray-400 dark:text-gray-500;
+    @apply text-gray-700 dark:text-gray-500;
   }
 }
