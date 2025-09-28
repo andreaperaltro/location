@@ -42,9 +42,17 @@ export function extractEXIFData(file: File): Promise<EXIFData> {
     const imageUrl = URL.createObjectURL(file)
     console.log('Extracting EXIF data from:', file.name, 'URL:', imageUrl)
     
+    // Set a timeout to handle cases where EXIF.getData doesn't call the callback
+    const timeout = setTimeout(() => {
+      console.log('EXIF extraction timeout - resolving with empty data')
+      URL.revokeObjectURL(imageUrl)
+      resolve({})
+    }, 5000)
+    
     EXIF.getData(imageUrl, function(this: HTMLImageElement) {
       try {
         console.log('EXIF.getData callback called')
+        clearTimeout(timeout)
         const exifData: EXIFData = {}
 
         // Basic camera info
@@ -121,6 +129,7 @@ export function extractEXIFData(file: File): Promise<EXIFData> {
         resolve(exifData)
       } catch (error) {
         console.error('Error in EXIF extraction:', error)
+        clearTimeout(timeout)
         reject(error)
       } finally {
         URL.revokeObjectURL(imageUrl)
