@@ -15,9 +15,9 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Pro
   let currentY = margin
   const lineHeight = 6
   const sectionSpacing = 8
-  const imageMaxWidth = 70 // Maximum width for images in mm
-  const imageMaxHeight = 50 // Maximum height for images in mm
-  const dataColumnWidth = 100 // Width for data column in mm
+  const imageMaxWidth = 45 // 25% of page width (180mm * 0.25 = 45mm)
+  const imageMaxHeight = 60 // Increased height to maintain good proportions
+  const dataColumnWidth = 135 // 75% of page width (180mm * 0.75 = 135mm)
 
   // Helper function to add text with word wrapping
   const addText = (text: string, x: number, y: number, maxWidth?: number, options: any = {}) => {
@@ -132,7 +132,7 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Pro
     const imageBottomY = await addImage(photo.imageUrl, imageX, imageY, imageMaxWidth, imageMaxHeight)
     
     // Start data on the right side of the image with proper spacing
-    const dataStartX = margin + imageMaxWidth + 15
+    const dataStartX = margin + imageMaxWidth + 10
     let dataY = imageY
 
     // Photo title section (always visible)
