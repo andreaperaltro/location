@@ -38,9 +38,9 @@ function CollapsibleSection({ title, icon, children, defaultOpen = false }: Coll
               <span className="font-medium text-sm text-value">{title}</span>
             </div>
             {isOpen ? (
-              <ChevronDown className="h-4 w-4 text-muted" />
+              <ChevronDown className="h-4 w-4 text-gray-900 dark:text-gray-400" />
             ) : (
-              <ChevronRight className="h-4 w-4 text-muted" />
+              <ChevronRight className="h-4 w-4 text-gray-900 dark:text-gray-400" />
             )}
           </button>
           {isOpen && (

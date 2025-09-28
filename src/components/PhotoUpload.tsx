@@ -243,7 +243,7 @@ export function PhotoUpload({ onPhotoProcessed, onMultiplePhotosProcessed }: Pho
                     <p className="text-gray-900 dark:text-gray-300">
                       Drag and drop images here, or click to browse
                     </p>
-                    <p className="text-sm text-muted mt-1">
+                    <p className="text-sm text-gray-900 dark:text-gray-400 mt-1">
                       Supports JPEG, PNG, HEIC, and other image formats. You can select multiple files at once.
                     </p>
                   </div>
