@@ -16,7 +16,7 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Pro
   const lineHeight = 6
   const sectionSpacing = 8
   const imageMaxWidth = 45 // 25% of page width (180mm * 0.25 = 45mm)
-  const imageMaxHeight = 60 // Increased height to maintain good proportions
+  const imageMaxHeight = 80 // Increased height to fill column better
   const dataColumnWidth = 135 // 75% of page width (180mm * 0.75 = 135mm)
 
   // Helper function to add text with word wrapping
@@ -68,16 +68,16 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Pro
           let imgWidth = img.width
           let imgHeight = img.height
           
-          // Scale down if too large
-          if (imgWidth > maxWidth) {
-            const ratio = maxWidth / imgWidth
-            imgWidth = maxWidth
-            imgHeight = imgHeight * ratio
-          }
+          // Always fill the width of the column, then scale height proportionally
+          const ratio = maxWidth / imgWidth
+          imgWidth = maxWidth
+          imgHeight = imgHeight * ratio
+          
+          // Only scale down height if it exceeds the maximum
           if (imgHeight > maxHeight) {
-            const ratio = maxHeight / imgHeight
+            const heightRatio = maxHeight / imgHeight
             imgHeight = maxHeight
-            imgWidth = imgWidth * ratio
+            imgWidth = imgWidth * heightRatio
           }
           
           // Convert to mm (assuming 96 DPI)

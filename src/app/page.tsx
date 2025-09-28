@@ -169,9 +169,9 @@ export default function Home() {
                   </Button>
                 </div>
                 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Left Column - Image Preview */}
-                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                  {/* Left Column - Image Preview (25%) */}
+                  <div className="lg:col-span-1 space-y-4">
                     <Card>
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
@@ -194,8 +194,8 @@ export default function Home() {
                     </Card>
                   </div>
 
-                  {/* Right Column - EXIF Data */}
-                  <div className="space-y-4">
+                  {/* Right Column - EXIF Data (75%) */}
+                  <div className="lg:col-span-3 space-y-4">
                     <EXIFDisplay 
                       exifData={photo.exifData} 
                       filters={filters}
