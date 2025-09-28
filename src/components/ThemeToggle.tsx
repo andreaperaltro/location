@@ -5,7 +5,21 @@ import { Button } from '@/components/ui/button'
 import { useTheme } from '@/lib/theme'
 
 export function ThemeToggle() {
-  const { theme, toggleTheme } = useTheme()
+  const { theme, toggleTheme, mounted } = useTheme()
+
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!mounted) {
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-9 w-9"
+        disabled
+      >
+        <div className="h-4 w-4" />
+      </Button>
+    )
+  }
 
   return (
     <Button
