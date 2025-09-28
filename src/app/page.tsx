@@ -40,70 +40,44 @@ export default function Home() {
         {!exifData ? (
           <PhotoUpload onPhotoProcessed={handlePhotoProcessed} />
         ) : (
-          <div className="space-y-6">
-            {/* Image Preview */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Camera className="h-5 w-5 text-primary" />
-                  Photo Preview
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="relative">
-                  <Image
-                    src={imageUrl!}
-                    alt="Uploaded photo"
-                    width={800}
-                    height={600}
-                    className="w-full h-auto max-h-96 object-contain rounded-lg"
-                    unoptimized
-                  />
-                </div>
-                <button
-                  onClick={resetApp}
-                  className="mt-4 text-sm text-gray-600 hover:text-gray-900 underline"
-                >
-                  Upload another photo
-                </button>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left Column - Image Preview */}
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Camera className="h-5 w-5 text-blue-600" />
+                    Photo Preview
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="relative">
+                    <Image
+                      src={imageUrl!}
+                      alt="Uploaded photo"
+                      width={800}
+                      height={600}
+                      className="w-full h-auto max-h-96 object-contain rounded-lg"
+                      unoptimized
+                    />
+                  </div>
+                  <button
+                    onClick={resetApp}
+                    className="mt-4 text-sm text-gray-600 hover:text-gray-900 underline"
+                  >
+                    Upload another photo
+                  </button>
+                </CardContent>
+              </Card>
+            </div>
 
-            {/* EXIF Data Display */}
-            <EXIFDisplay exifData={exifData} />
+            {/* Right Column - EXIF Data */}
+            <div className="space-y-4">
+              <EXIFDisplay exifData={exifData} />
+            </div>
           </div>
         )}
 
-        {/* Quick Stats */}
-        {exifData && (
-          <Card className="mt-8">
-            <CardHeader>
-              <CardTitle>Quick Summary</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-green-500" />
-                  <span className="text-sm">
-                    {exifData.gps?.latitude && exifData.gps?.longitude ? 'Location Found' : 'No Location'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-blue-500" />
-                  <span className="text-sm">
-                    {exifData.dateTimeOriginal || exifData.dateTime ? 'Date Available' : 'No Date'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Camera className="h-4 w-4 text-purple-500" />
-                  <span className="text-sm">
-                    {exifData.make || exifData.model ? 'Camera Info' : 'No Camera Info'}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   )
