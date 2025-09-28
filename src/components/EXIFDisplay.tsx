@@ -27,29 +27,29 @@ interface CollapsibleSectionProps {
 function CollapsibleSection({ title, icon, children, defaultOpen = false }: CollapsibleSectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen)
 
-  return (
-    <div className="border-b border-gray-300 last:border-b-0">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-3 hover:bg-gray-50 transition-colors"
-      >
-        <div className="flex items-center gap-2">
-          {icon}
-          <span className="font-medium text-sm text-gray-900">{title}</span>
+      return (
+        <div className="border-b border-gray-300 dark:border-gray-700 last:border-b-0">
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="w-full flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              {icon}
+              <span className="font-medium text-sm text-gray-900 dark:text-gray-100">{title}</span>
+            </div>
+            {isOpen ? (
+              <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+            ) : (
+              <ChevronRight className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+            )}
+          </button>
+          {isOpen && (
+            <div className="px-3 pb-3 space-y-2">
+              {children}
+            </div>
+          )}
         </div>
-        {isOpen ? (
-          <ChevronDown className="h-4 w-4 text-gray-500" />
-        ) : (
-          <ChevronRight className="h-4 w-4 text-gray-500" />
-        )}
-      </button>
-      {isOpen && (
-        <div className="px-3 pb-3 space-y-2">
-          {children}
-        </div>
-      )}
-    </div>
-  )
+      )
 }
 
 export function EXIFDisplay({ exifData, filters, title, isGeocoded, onTitleChange }: EXIFDisplayProps) {
@@ -76,13 +76,13 @@ export function EXIFDisplay({ exifData, filters, title, isGeocoded, onTitleChang
     }
   }
   return (
-    <Card className="h-fit">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Camera className="h-4 w-4 text-blue-600" />
-          Photo Information
-        </CardTitle>
-      </CardHeader>
+        <Card className="h-fit">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Camera className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              Photo Information
+            </CardTitle>
+          </CardHeader>
           <CardContent className="p-0">
             {/* Photo Title */}
             <CollapsibleSection

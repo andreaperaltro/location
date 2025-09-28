@@ -74,7 +74,7 @@ export function DataFilter({ filters, onFiltersChange }: DataFilterProps) {
         <CardTitle className="flex items-center justify-between">
           <span className="text-lg">Data Filters</span>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-gray-600 dark:text-gray-300">
               {activeCount} of {filterOptions.length} sections active
             </span>
             <Button
@@ -109,8 +109,8 @@ export function DataFilter({ filters, onFiltersChange }: DataFilterProps) {
                   key={option.key}
                   className={`flex items-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-all ${
                     filters[option.key]
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400'
+                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                   }`}
                 >
                   <input
@@ -122,7 +122,7 @@ export function DataFilter({ filters, onFiltersChange }: DataFilterProps) {
                   <div className={`${option.color}`}>
                     {option.icon}
                   </div>
-                  <span className="text-sm font-medium text-gray-900">
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                     {option.label}
                   </span>
                 </label>
