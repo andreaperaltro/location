@@ -17,7 +17,6 @@ interface PhotoData {
 
 export default function Home() {
   const [photos, setPhotos] = useState<PhotoData[]>([])
-  const [isUploading, setIsUploading] = useState(false)
 
   const handlePhotoProcessed = (data: EXIFData, url: string) => {
     const newPhoto: PhotoData = {

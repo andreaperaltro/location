@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { EXIFData } from '@/lib/exif'
 import { formatDate, formatGPS, generateGoogleMapsLink } from '@/lib/utils'
 import { formatSunTime, formatSunPosition } from '@/lib/sun'
-import { MapPin, Camera, Clock, Settings, ExternalLink, Aperture, ImageIcon, ChevronDown, ChevronRight, Sun, Sunrise, Sunset } from 'lucide-react'
+import { MapPin, Camera, Clock, Settings, Aperture, ImageIcon, ChevronDown, ChevronRight, Sun } from 'lucide-react'
 
 interface EXIFDisplayProps {
   exifData: EXIFData
