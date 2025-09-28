@@ -6,12 +6,15 @@ import { Button } from '@/components/ui/button'
 import { EXIFData } from '@/lib/exif'
 import { formatDate, formatGPS, generateGoogleMapsLink } from '@/lib/utils'
 import { formatSunTime, formatSunPosition } from '@/lib/sun'
-import { MapPin, Camera, Clock, Settings, Aperture, ImageIcon, ChevronDown, ChevronRight, Sun } from 'lucide-react'
+import { MapPin, Camera, Clock, Settings, Aperture, ImageIcon, ChevronDown, ChevronRight, Sun, Edit2, Save, X } from 'lucide-react'
 import { DataFilter } from './DataFilter'
 
 interface EXIFDisplayProps {
   exifData: EXIFData
   filters: DataFilter
+  title: string
+  isGeocoded: boolean
+  onTitleChange: (newTitle: string) => void
 }
 
 interface CollapsibleSectionProps {
@@ -49,7 +52,29 @@ function CollapsibleSection({ title, icon, children, defaultOpen = false }: Coll
   )
 }
 
-export function EXIFDisplay({ exifData, filters }: EXIFDisplayProps) {
+export function EXIFDisplay({ exifData, filters, title, isGeocoded, onTitleChange }: EXIFDisplayProps) {
+  const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [editValue, setEditValue] = useState(title)
+
+  const handleSaveTitle = () => {
+    if (editValue.trim()) {
+      onTitleChange(editValue.trim())
+      setIsEditingTitle(false)
+    }
+  }
+
+  const handleCancelTitle = () => {
+    setEditValue(title)
+    setIsEditingTitle(false)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSaveTitle()
+    } else if (e.key === 'Escape') {
+      handleCancelTitle()
+    }
+  }
   return (
     <Card className="h-fit">
       <CardHeader className="pb-3">
@@ -59,6 +84,70 @@ export function EXIFDisplay({ exifData, filters }: EXIFDisplayProps) {
         </CardTitle>
       </CardHeader>
           <CardContent className="p-0">
+            {/* Photo Title */}
+            <CollapsibleSection
+              title="Photo Title"
+              icon={<Camera className="h-4 w-4 text-blue-600" />}
+              defaultOpen={true}
+            >
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  {isGeocoded && (
+                    <MapPin className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  )}
+                  {isEditingTitle ? (
+                    <input
+                      type="text"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      autoFocus
+                    />
+                  ) : (
+                    <span className="text-sm font-medium text-gray-900 flex-1">
+                      {title}
+                    </span>
+                  )}
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  {isEditingTitle ? (
+                    <>
+                      <Button
+                        size="sm"
+                        onClick={handleSaveTitle}
+                        className="h-7 text-xs"
+                        disabled={!editValue.trim()}
+                      >
+                        <Save className="h-3 w-3 mr-1" />
+                        Save
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleCancelTitle}
+                        className="h-7 text-xs"
+                      >
+                        <X className="h-3 w-3 mr-1" />
+                        Cancel
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setIsEditingTitle(true)}
+                      className="h-7 text-xs"
+                    >
+                      <Edit2 className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CollapsibleSection>
+
             {/* GPS Location */}
             {filters.location && exifData.gps && (
           <CollapsibleSection

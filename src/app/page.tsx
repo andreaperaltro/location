@@ -5,7 +5,6 @@ import Image from 'next/image'
 import { PhotoUpload } from '@/components/PhotoUpload'
 import { EXIFDisplay } from '@/components/EXIFDisplay'
 import { DataFilter, DataFilter as DataFilterType } from '@/components/DataFilter'
-import { PhotoTitle } from '@/components/PhotoTitle'
 import { EXIFData } from '@/lib/exif'
 import { reverseGeocode, generateFallbackTitle } from '@/lib/geocoding'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -145,14 +144,10 @@ export default function Home() {
             {/* Photos List */}
             {photos.map((photo, index) => (
               <div key={photo.id} className="space-y-4">
-                {/* Photo Title */}
-                <PhotoTitle
-                  title={photo.title}
-                  onTitleChange={(newTitle) => handleTitleChange(photo.id, newTitle)}
-                  isGeocoded={photo.isGeocoded}
-                />
-                
-                <div className="flex items-center justify-end mb-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Photo {index + 1}
+                  </h2>
                   <Button
                     variant="destructive"
                     size="sm"
@@ -191,7 +186,13 @@ export default function Home() {
 
                   {/* Right Column - EXIF Data */}
                   <div className="space-y-4">
-                    <EXIFDisplay exifData={photo.exifData} filters={filters} />
+                    <EXIFDisplay 
+                      exifData={photo.exifData} 
+                      filters={filters}
+                      title={photo.title}
+                      isGeocoded={photo.isGeocoded}
+                      onTitleChange={(newTitle) => handleTitleChange(photo.id, newTitle)}
+                    />
                   </div>
                 </div>
               </div>
