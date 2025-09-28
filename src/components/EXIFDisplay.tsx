@@ -21,14 +21,14 @@ export function EXIFDisplay({ exifData }: EXIFDisplayProps) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-primary" />
+              <MapPin className="h-5 w-5 text-blue-600" />
               Location Information
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Coordinates</p>
+                <p className="text-sm font-medium text-gray-600">Coordinates</p>
                 <p className="text-lg font-mono">
                   {formatGPS({
                     lat: exifData.gps!.latitude,
@@ -38,7 +38,7 @@ export function EXIFDisplay({ exifData }: EXIFDisplayProps) {
               </div>
               {exifData.gps?.altitude && (
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Altitude</p>
+                  <p className="text-sm font-medium text-gray-600">Altitude</p>
                   <p className="text-lg">{exifData.gps.altitude.toFixed(2)}m</p>
                 </div>
               )}
@@ -63,7 +63,7 @@ export function EXIFDisplay({ exifData }: EXIFDisplayProps) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-primary" />
+              <Clock className="h-5 w-5 text-blue-600" />
               Date & Time
             </CardTitle>
           </CardHeader>
@@ -71,13 +71,13 @@ export function EXIFDisplay({ exifData }: EXIFDisplayProps) {
             <div className="space-y-2">
               {exifData.dateTimeOriginal && (
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Original Date</p>
+                  <p className="text-sm font-medium text-gray-600">Original Date</p>
                   <p className="text-lg">{formatDate(new Date(exifData.dateTimeOriginal))}</p>
                 </div>
               )}
               {exifData.dateTime && exifData.dateTime !== exifData.dateTimeOriginal && (
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">File Date</p>
+                  <p className="text-sm font-medium text-gray-600">File Date</p>
                   <p className="text-lg">{formatDate(new Date(exifData.dateTime))}</p>
                 </div>
               )}
@@ -91,7 +91,7 @@ export function EXIFDisplay({ exifData }: EXIFDisplayProps) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Camera className="h-5 w-5 text-primary" />
+              <Camera className="h-5 w-5 text-blue-600" />
               Camera Information
             </CardTitle>
           </CardHeader>
@@ -99,19 +99,19 @@ export function EXIFDisplay({ exifData }: EXIFDisplayProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {exifData.make && (
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Make</p>
+                  <p className="text-sm font-medium text-gray-600">Make</p>
                   <p className="text-lg">{exifData.make}</p>
                 </div>
               )}
               {exifData.model && (
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Model</p>
+                  <p className="text-sm font-medium text-gray-600">Model</p>
                   <p className="text-lg">{exifData.model}</p>
                 </div>
               )}
               {exifData.software && (
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Software</p>
+                  <p className="text-sm font-medium text-gray-600">Software</p>
                   <p className="text-lg">{exifData.software}</p>
                 </div>
               )}
@@ -125,7 +125,7 @@ export function EXIFDisplay({ exifData }: EXIFDisplayProps) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5 text-primary" />
+              <Settings className="h-5 w-5 text-blue-600" />
               Exposure Settings
             </CardTitle>
           </CardHeader>
@@ -133,19 +133,19 @@ export function EXIFDisplay({ exifData }: EXIFDisplayProps) {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {exifData.exposure.fNumber && (
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Aperture</p>
+                  <p className="text-sm font-medium text-gray-600">Aperture</p>
                   <p className="text-lg">f/{exifData.exposure.fNumber}</p>
                 </div>
               )}
               {exifData.exposure.exposureTime && (
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Shutter Speed</p>
+                  <p className="text-sm font-medium text-gray-600">Shutter Speed</p>
                   <p className="text-lg">1/{Math.round(1/exifData.exposure.exposureTime)}s</p>
                 </div>
               )}
               {exifData.exposure.iso && (
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">ISO</p>
+                  <p className="text-sm font-medium text-gray-600">ISO</p>
                   <p className="text-lg">{exifData.exposure.iso}</p>
                 </div>
               )}
@@ -164,19 +164,19 @@ export function EXIFDisplay({ exifData }: EXIFDisplayProps) {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {exifData.camera.focalLength && (
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Focal Length</p>
+                  <p className="text-sm font-medium text-gray-600">Focal Length</p>
                   <p className="text-lg">{exifData.camera.focalLength}mm</p>
                 </div>
               )}
               {exifData.camera.flash !== undefined && (
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Flash</p>
+                  <p className="text-sm font-medium text-gray-600">Flash</p>
                   <p className="text-lg">{exifData.camera.flash ? 'On' : 'Off'}</p>
                 </div>
               )}
               {exifData.camera.whiteBalance !== undefined && (
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">White Balance</p>
+                  <p className="text-sm font-medium text-gray-600">White Balance</p>
                   <p className="text-lg">{exifData.camera.whiteBalance ? 'Auto' : 'Manual'}</p>
                 </div>
               )}
@@ -195,19 +195,19 @@ export function EXIFDisplay({ exifData }: EXIFDisplayProps) {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {exifData.image.width && exifData.image.height && (
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Dimensions</p>
+                  <p className="text-sm font-medium text-gray-600">Dimensions</p>
                   <p className="text-lg">{exifData.image.width} × {exifData.image.height}</p>
                 </div>
               )}
               {exifData.image.xResolution && exifData.image.yResolution && (
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Resolution</p>
+                  <p className="text-sm font-medium text-gray-600">Resolution</p>
                   <p className="text-lg">{exifData.image.xResolution} × {exifData.image.yResolution} DPI</p>
                 </div>
               )}
               {exifData.image.orientation && (
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Orientation</p>
+                  <p className="text-sm font-medium text-gray-600">Orientation</p>
                   <p className="text-lg">{exifData.image.orientation}</p>
                 </div>
               )}

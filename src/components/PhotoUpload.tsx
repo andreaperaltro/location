@@ -72,8 +72,8 @@ export function PhotoUpload({ onPhotoProcessed }: PhotoUploadProps) {
           <div
             className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
               isDragOver 
-                ? 'border-primary bg-primary/5' 
-                : 'border-muted-foreground/25 hover:border-primary/50'
+                ? 'border-blue-500 bg-blue-50' 
+                : 'border-gray-300 hover:border-blue-400'
             }`}
             onDragOver={(e) => {
               e.preventDefault()
@@ -83,12 +83,12 @@ export function PhotoUpload({ onPhotoProcessed }: PhotoUploadProps) {
             onDrop={handleDrop}
           >
             <div className="flex flex-col items-center space-y-4">
-              <div className="p-4 rounded-full bg-primary/10">
-                <Camera className="h-8 w-8 text-primary" />
+              <div className="p-4 rounded-full bg-blue-100">
+                <Camera className="h-8 w-8 text-blue-600" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold">Upload a Photo</h3>
-                <p className="text-muted-foreground">
+                <p className="text-gray-600">
                   Drag and drop an image here, or click to browse
                 </p>
               </div>
