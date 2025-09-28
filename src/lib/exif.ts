@@ -40,7 +40,7 @@ export interface EXIFData {
 export function extractEXIFData(file: File): Promise<EXIFData> {
   return new Promise((resolve, reject) => {
     const imageUrl = URL.createObjectURL(file)
-    EXIF.getData(imageUrl, function() {
+    EXIF.getData(imageUrl, function(this: any) {
       try {
         const exifData: EXIFData = {}
 
