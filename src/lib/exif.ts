@@ -1,4 +1,4 @@
-import EXIF from 'exif-js'
+import { parse } from 'exifr'
 
 export interface EXIFData {
   make?: string
@@ -37,105 +37,98 @@ export interface EXIFData {
   }
 }
 
-export function extractEXIFData(file: File): Promise<EXIFData> {
-  return new Promise((resolve, reject) => {
-    const imageUrl = URL.createObjectURL(file)
-    console.log('Extracting EXIF data from:', file.name, 'URL:', imageUrl)
-    
-    // Set a timeout to handle cases where EXIF.getData doesn't call the callback
-    const timeout = setTimeout(() => {
-      console.log('EXIF extraction timeout - resolving with empty data')
-      URL.revokeObjectURL(imageUrl)
-      resolve({})
-    }, 5000)
-    
-    EXIF.getData(imageUrl, function(this: HTMLImageElement) {
-      try {
-        console.log('EXIF.getData callback called')
-        clearTimeout(timeout)
-        const exifData: EXIFData = {}
-
-        // Basic camera info
-        exifData.make = EXIF.getTag(this, 'Make')
-        exifData.model = EXIF.getTag(this, 'Model')
-        exifData.software = EXIF.getTag(this, 'Software')
-        
-        console.log('Basic info extracted:', {
-          make: exifData.make,
-          model: exifData.model,
-          software: exifData.software
-        })
-
-        // Date/Time
-        exifData.dateTime = EXIF.getTag(this, 'DateTime')
-        exifData.dateTimeOriginal = EXIF.getTag(this, 'DateTimeOriginal')
-        exifData.dateTimeDigitized = EXIF.getTag(this, 'DateTimeDigitized')
-
-        // GPS Data
-        const lat = EXIF.getTag(this, 'GPSLatitude')
-        const latRef = EXIF.getTag(this, 'GPSLatitudeRef')
-        const lng = EXIF.getTag(this, 'GPSLongitude')
-        const lngRef = EXIF.getTag(this, 'GPSLongitudeRef')
-        const alt = EXIF.getTag(this, 'GPSAltitude')
-        
-        console.log('GPS data:', { lat, latRef, lng, lngRef, alt })
-
-        if (lat && lng && latRef && lngRef) {
-          const latitude = convertDMSToDD(lat, latRef)
-          const longitude = convertDMSToDD(lng, lngRef)
-          
-          exifData.gps = {
-            latitude,
-            longitude,
-            latitudeRef: latRef,
-            longitudeRef: lngRef
-          }
-          
-          if (alt) {
-            exifData.gps.altitude = alt
-          }
-          
-          console.log('GPS coordinates converted:', { latitude, longitude })
-        }
-
-        // Exposure settings
-        exifData.exposure = {
-          aperture: EXIF.getTag(this, 'ApertureValue'),
-          shutterSpeed: EXIF.getTag(this, 'ShutterSpeedValue'),
-          iso: EXIF.getTag(this, 'ISOSpeedRatings'),
-          exposureTime: EXIF.getTag(this, 'ExposureTime'),
-          fNumber: EXIF.getTag(this, 'FNumber')
-        }
-
-        // Camera settings
-        exifData.camera = {
-          focalLength: EXIF.getTag(this, 'FocalLength'),
-          flash: EXIF.getTag(this, 'Flash'),
-          whiteBalance: EXIF.getTag(this, 'WhiteBalance'),
-          meteringMode: EXIF.getTag(this, 'MeteringMode'),
-          exposureMode: EXIF.getTag(this, 'ExposureMode')
-        }
-
-        // Image properties
-        exifData.image = {
-          width: EXIF.getTag(this, 'PixelXDimension'),
-          height: EXIF.getTag(this, 'PixelYDimension'),
-          orientation: EXIF.getTag(this, 'Orientation'),
-          xResolution: EXIF.getTag(this, 'XResolution'),
-          yResolution: EXIF.getTag(this, 'YResolution')
-        }
-
-        console.log('Final EXIF data:', exifData)
-        resolve(exifData)
-      } catch (error) {
-        console.error('Error in EXIF extraction:', error)
-        clearTimeout(timeout)
-        reject(error)
-      } finally {
-        URL.revokeObjectURL(imageUrl)
-      }
+export async function extractEXIFData(file: File): Promise<EXIFData> {
+  console.log('Extracting EXIF data from:', file.name, 'Type:', file.type, 'Size:', file.size)
+  
+  try {
+    // Parse EXIF data using exifr
+    const exif = await parse(file, {
+      gps: true,
+      ifd0: true,
+      ifd1: true,
+      exif: true,
+      iptc: true,
+      icc: true,
+      jfif: true,
+      ihdr: true,
+      multiSegment: true,
+      mergeOutput: true
     })
-  })
+    
+    console.log('Raw EXIF data from exifr:', exif)
+    
+    if (!exif) {
+      console.log('No EXIF data found')
+      return {}
+    }
+    
+    const exifData: EXIFData = {}
+    
+    // Basic camera info
+    exifData.make = exif.Make || exif.make
+    exifData.model = exif.Model || exif.model
+    exifData.software = exif.Software || exif.software
+    
+    console.log('Basic info extracted:', {
+      make: exifData.make,
+      model: exifData.model,
+      software: exifData.software
+    })
+
+    // Date/Time
+    exifData.dateTime = exif.DateTime || exif.dateTime
+    exifData.dateTimeOriginal = exif.DateTimeOriginal || exif.dateTimeOriginal
+    exifData.dateTimeDigitized = exif.DateTimeDigitized || exif.dateTimeDigitized
+
+    // GPS Data
+    if (exif.latitude && exif.longitude) {
+      exifData.gps = {
+        latitude: exif.latitude,
+        longitude: exif.longitude,
+        altitude: exif.altitude,
+        latitudeRef: exif.latitudeRef,
+        longitudeRef: exif.longitudeRef
+      }
+      console.log('GPS coordinates found:', { 
+        latitude: exifData.gps.latitude, 
+        longitude: exifData.gps.longitude 
+      })
+    }
+
+    // Exposure settings
+    exifData.exposure = {
+      aperture: exif.ApertureValue || exif.apertureValue,
+      shutterSpeed: exif.ShutterSpeedValue || exif.shutterSpeedValue,
+      iso: exif.ISOSpeedRatings || exif.isoSpeedRatings,
+      exposureTime: exif.ExposureTime || exif.exposureTime,
+      fNumber: exif.FNumber || exif.fNumber
+    }
+
+    // Camera settings
+    exifData.camera = {
+      focalLength: exif.FocalLength || exif.focalLength,
+      flash: exif.Flash || exif.flash,
+      whiteBalance: exif.WhiteBalance || exif.whiteBalance,
+      meteringMode: exif.MeteringMode || exif.meteringMode,
+      exposureMode: exif.ExposureMode || exif.exposureMode
+    }
+
+    // Image properties
+    exifData.image = {
+      width: exif.PixelXDimension || exif.pixelXDimension || exif.width,
+      height: exif.PixelYDimension || exif.pixelYDimension || exif.height,
+      orientation: exif.Orientation || exif.orientation,
+      xResolution: exif.XResolution || exif.xResolution,
+      yResolution: exif.YResolution || exif.yResolution
+    }
+
+    console.log('Final EXIF data:', exifData)
+    return exifData
+    
+  } catch (error) {
+    console.error('Error extracting EXIF data:', error)
+    return {}
+  }
 }
 
 function convertDMSToDD(dms: number[], ref: string): number {
