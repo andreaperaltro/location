@@ -64,29 +64,22 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Pro
       
       return new Promise<number>((resolve) => {
         img.onload = () => {
-          // Calculate dimensions maintaining aspect ratio
-          let imgWidth = img.width
-          let imgHeight = img.height
+          // Always fill the full width of the column (45mm)
+          const mmWidth = maxWidth // Use the maxWidth directly (45mm)
+          const mmHeight = (img.height * maxWidth) / img.width // Calculate height maintaining aspect ratio
           
-          // Always fill the width of the column, then scale height proportionally
-          const ratio = maxWidth / imgWidth
-          imgWidth = maxWidth
-          imgHeight = imgHeight * ratio
-          
-          // Only scale down height if it exceeds the maximum
-          if (imgHeight > maxHeight) {
-            const heightRatio = maxHeight / imgHeight
-            imgHeight = maxHeight
-            imgWidth = imgWidth * heightRatio
+          // Only scale down if height exceeds maximum
+          let finalWidth = mmWidth
+          let finalHeight = mmHeight
+          if (mmHeight > maxHeight) {
+            const heightRatio = maxHeight / mmHeight
+            finalHeight = maxHeight
+            finalWidth = mmWidth * heightRatio
           }
           
-          // Convert to mm (assuming 96 DPI)
-          const mmWidth = (imgWidth * 25.4) / 96
-          const mmHeight = (imgHeight * 25.4) / 96
-          
           // Add image to PDF
-          pdf.addImage(imageUrl, 'JPEG', x, y, mmWidth, mmHeight)
-          resolve(y + mmHeight + 5)
+          pdf.addImage(imageUrl, 'JPEG', x, y, finalWidth, finalHeight)
+          resolve(y + finalHeight + 5)
         }
         img.onerror = () => {
           // If image fails to load, just return current Y
