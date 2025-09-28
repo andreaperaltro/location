@@ -44,8 +44,6 @@ export async function extractEXIFData(file: File): Promise<EXIFData> {
     // Parse EXIF data using exifr
     const exif = await parse(file, {
       gps: true,
-      ifd0: true,
-      ifd1: true,
       exif: true,
       iptc: true,
       icc: true,
@@ -131,10 +129,3 @@ export async function extractEXIFData(file: File): Promise<EXIFData> {
   }
 }
 
-function convertDMSToDD(dms: number[], ref: string): number {
-  let dd = dms[0] + dms[1]/60 + dms[2]/(60*60)
-  if (ref === 'S' || ref === 'W') {
-    dd = dd * -1
-  }
-  return dd
-}
