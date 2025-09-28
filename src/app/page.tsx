@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { PhotoUpload } from '@/components/PhotoUpload'
 import { EXIFDisplay } from '@/components/EXIFDisplay'
+import { DataFilter, DataFilter as DataFilterType } from '@/components/DataFilter'
 import { EXIFData } from '@/lib/exif'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -17,6 +18,15 @@ interface PhotoData {
 
 export default function Home() {
   const [photos, setPhotos] = useState<PhotoData[]>([])
+  const [filters, setFilters] = useState<DataFilterType>({
+    location: true,
+    dateTime: true,
+    camera: true,
+    exposure: true,
+    settings: true,
+    sun: true,
+    image: true,
+  })
 
   const handlePhotoProcessed = (data: EXIFData, url: string) => {
     const newPhoto: PhotoData = {
@@ -71,6 +81,11 @@ export default function Home() {
           />
         ) : (
           <div className="space-y-8">
+            {/* Data Filter */}
+            <DataFilter 
+              filters={filters} 
+              onFiltersChange={setFilters} 
+            />
             {/* Photos List */}
             {photos.map((photo, index) => (
               <div key={photo.id} className="space-y-4">
@@ -101,7 +116,7 @@ export default function Home() {
                       </CardHeader>
                       <CardContent>
                         <div className="relative">
-                          <Image
+          <Image
                             src={photo.imageUrl}
                             alt={`Uploaded photo ${index + 1}`}
                             width={800}
@@ -116,7 +131,7 @@ export default function Home() {
 
                   {/* Right Column - EXIF Data */}
                   <div className="space-y-4">
-                    <EXIFDisplay exifData={photo.exifData} />
+                    <EXIFDisplay exifData={photo.exifData} filters={filters} />
                   </div>
                 </div>
               </div>

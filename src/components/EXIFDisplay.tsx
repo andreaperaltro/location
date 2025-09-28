@@ -7,9 +7,11 @@ import { EXIFData } from '@/lib/exif'
 import { formatDate, formatGPS, generateGoogleMapsLink } from '@/lib/utils'
 import { formatSunTime, formatSunPosition } from '@/lib/sun'
 import { MapPin, Camera, Clock, Settings, Aperture, ImageIcon, ChevronDown, ChevronRight, Sun } from 'lucide-react'
+import { DataFilter } from './DataFilter'
 
 interface EXIFDisplayProps {
   exifData: EXIFData
+  filters: DataFilter
 }
 
 interface CollapsibleSectionProps {
@@ -47,7 +49,7 @@ function CollapsibleSection({ title, icon, children, defaultOpen = false }: Coll
   )
 }
 
-export function EXIFDisplay({ exifData }: EXIFDisplayProps) {
+export function EXIFDisplay({ exifData, filters }: EXIFDisplayProps) {
   return (
     <Card className="h-fit">
       <CardHeader className="pb-3">
@@ -56,9 +58,9 @@ export function EXIFDisplay({ exifData }: EXIFDisplayProps) {
           Photo Information
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
-        {/* GPS Location */}
-        {exifData.gps && (
+          <CardContent className="p-0">
+            {/* GPS Location */}
+            {filters.location && exifData.gps && (
           <CollapsibleSection
             title="Location"
             icon={<MapPin className="h-4 w-4 text-green-600" />}
@@ -103,8 +105,8 @@ export function EXIFDisplay({ exifData }: EXIFDisplayProps) {
           </CollapsibleSection>
         )}
 
-        {/* Date/Time Information */}
-        {(exifData.dateTime || exifData.dateTimeOriginal || exifData.dateTimeDigitized) && (
+            {/* Date/Time Information */}
+            {filters.dateTime && (exifData.dateTime || exifData.dateTimeOriginal || exifData.dateTimeDigitized) && (
           <CollapsibleSection
             title="Date & Time"
             icon={<Clock className="h-4 w-4 text-blue-600" />}
@@ -127,8 +129,8 @@ export function EXIFDisplay({ exifData }: EXIFDisplayProps) {
           </CollapsibleSection>
         )}
 
-        {/* Camera Information */}
-        {(exifData.make || exifData.model || exifData.software) && (
+            {/* Camera Information */}
+            {filters.camera && (exifData.make || exifData.model || exifData.software) && (
           <CollapsibleSection
             title="Camera"
             icon={<Camera className="h-4 w-4 text-purple-600" />}
@@ -156,8 +158,8 @@ export function EXIFDisplay({ exifData }: EXIFDisplayProps) {
           </CollapsibleSection>
         )}
 
-        {/* Exposure Settings */}
-        {exifData.exposure && (
+            {/* Exposure Settings */}
+            {filters.exposure && exifData.exposure && (
           <CollapsibleSection
             title="Exposure"
             icon={<Aperture className="h-4 w-4 text-orange-600" />}
@@ -191,8 +193,8 @@ export function EXIFDisplay({ exifData }: EXIFDisplayProps) {
           </CollapsibleSection>
         )}
 
-        {/* Camera Settings */}
-        {exifData.camera && (
+            {/* Camera Settings */}
+            {filters.settings && exifData.camera && (
           <CollapsibleSection
             title="Settings"
             icon={<Settings className="h-4 w-4 text-indigo-600" />}
@@ -227,7 +229,7 @@ export function EXIFDisplay({ exifData }: EXIFDisplayProps) {
         )}
 
             {/* Sun Data */}
-            {exifData.sun && (
+            {filters.sun && exifData.sun && (
               <CollapsibleSection
                 title="Sun Data"
                 icon={<Sun className="h-4 w-4 text-yellow-600" />}
@@ -269,7 +271,7 @@ export function EXIFDisplay({ exifData }: EXIFDisplayProps) {
             )}
 
             {/* Image Properties */}
-            {exifData.image && (
+            {filters.image && exifData.image && (
               <CollapsibleSection
                 title="Image"
                 icon={<ImageIcon className="h-4 w-4 text-cyan-600" />}
