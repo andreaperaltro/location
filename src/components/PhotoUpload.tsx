@@ -41,19 +41,21 @@ export function PhotoUpload({ onPhotoProcessed }: PhotoUploadProps) {
         console.log('Converting HEIC file to JPEG for preview...', file.name, file.type, file.size)
         try {
           // Dynamic import to avoid SSR issues
-          const heic2any = (await import('heic2any')).default
-          console.log('heic2any library loaded successfully')
+          const heicConvert = (await import('heic-convert')).default
+          console.log('heic-convert library loaded successfully')
           
-          const convertedBlob = await heic2any({
-            blob: file,
-            toType: 'image/jpeg',
+          // Convert HEIC to JPEG
+          const arrayBuffer = await file.arrayBuffer()
+          const jpegBuffer = await heicConvert({
+            buffer: arrayBuffer,
+            format: 'JPEG',
             quality: 0.8
           })
           
-          console.log('Conversion result:', convertedBlob)
+          console.log('Conversion result buffer size:', jpegBuffer.length)
           
-          // heic2any returns an array, take the first item
-          const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob
+          // Create blob from buffer
+          const blob = new Blob([jpegBuffer], { type: 'image/jpeg' })
           console.log('Final blob:', blob, 'Type:', blob.type, 'Size:', blob.size)
           
           imageUrl = URL.createObjectURL(blob)
