@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Camera, Trash2, Plus, Download } from 'lucide-react'
 
-interface PhotoData {
+export interface PhotoData {
   exifData: EXIFData
   imageUrl: string
   id: string
