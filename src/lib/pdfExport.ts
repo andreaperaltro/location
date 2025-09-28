@@ -15,13 +15,14 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Pro
   let currentY = margin
   const lineHeight = 6
   const sectionSpacing = 8
-  const imageMaxWidth = 80 // Maximum width for images in mm
-  const imageMaxHeight = 60 // Maximum height for images in mm
+  const imageMaxWidth = 70 // Maximum width for images in mm
+  const imageMaxHeight = 50 // Maximum height for images in mm
+  const dataColumnWidth = 100 // Width for data column in mm
 
   // Helper function to add text with word wrapping
-  const addText = (text: string, x: number, y: number, options: any = {}) => {
-    const maxWidth = contentWidth - (x - margin)
-    const lines = pdf.splitTextToSize(text, maxWidth)
+  const addText = (text: string, x: number, y: number, maxWidth?: number, options: any = {}) => {
+    const textMaxWidth = maxWidth || (contentWidth - (x - margin))
+    const lines = pdf.splitTextToSize(text, textMaxWidth)
     pdf.text(lines, x, y, options)
     return y + (lines.length * lineHeight)
   }
@@ -38,11 +39,11 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Pro
   }
 
   // Helper function to add a data row
-  const addDataRow = (label: string, value: string, y: number, isLink: boolean = false) => {
+  const addDataRow = (label: string, value: string, x: number, y: number, isLink: boolean = false) => {
     pdf.setFontSize(10)
     pdf.setFont('helvetica', 'bold')
     pdf.setTextColor(0, 0, 0)
-    addText(`${label}:`, margin, y)
+    addText(`${label}:`, x, y, dataColumnWidth)
     
     pdf.setFont('helvetica', 'normal')
     if (isLink) {
@@ -50,7 +51,7 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Pro
     } else {
       pdf.setTextColor(0, 0, 0)
     }
-    const newY = addText(value, margin + 30, y)
+    const newY = addText(value, x + 25, y, dataColumnWidth - 25)
     return newY + 2
   }
 
@@ -125,21 +126,21 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Pro
     // Photo title
     currentY = addSectionHeader(`Photo ${i + 1}: ${photo.title}`, currentY)
 
-    // Add the image first
+    // Add the image on the left side
     const imageX = margin
     const imageY = currentY
-    currentY = await addImage(photo.imageUrl, imageX, imageY, imageMaxWidth, imageMaxHeight)
+    const imageBottomY = await addImage(photo.imageUrl, imageX, imageY, imageMaxWidth, imageMaxHeight)
     
-    // Start data on the right side of the image
-    const dataStartX = margin + imageMaxWidth + 10
+    // Start data on the right side of the image with proper spacing
+    const dataStartX = margin + imageMaxWidth + 15
     let dataY = imageY
 
     // Photo title section (always visible)
-    dataY = addDataRow('Title', photo.title, dataY)
+    dataY = addDataRow('Title', photo.title, dataStartX, dataY)
     if (photo.isGeocoded) {
-      dataY = addDataRow('Source', 'GPS Coordinates (Geocoded)', dataY)
+      dataY = addDataRow('Source', 'GPS Coordinates (Geocoded)', dataStartX, dataY)
     } else {
-      dataY = addDataRow('Source', 'Manual Entry', dataY)
+      dataY = addDataRow('Source', 'Manual Entry', dataStartX, dataY)
     }
     dataY += 5
 
@@ -148,14 +149,14 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Pro
       pdf.setFontSize(12)
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(0, 0, 0)
-      dataY = addText('Location', dataStartX, dataY)
+      dataY = addText('Location', dataStartX, dataY, dataColumnWidth)
       dataY += 3
       
-      dataY = addDataRow('Coordinates', formatGPS({ lat: photo.exifData.gps.latitude, lng: photo.exifData.gps.longitude }), dataY)
+      dataY = addDataRow('Coordinates', formatGPS({ lat: photo.exifData.gps.latitude, lng: photo.exifData.gps.longitude }), dataStartX, dataY)
       if (photo.exifData.gps.altitude) {
-        dataY = addDataRow('Altitude', `${photo.exifData.gps.altitude.toFixed(2)} m`, dataY)
+        dataY = addDataRow('Altitude', `${photo.exifData.gps.altitude.toFixed(2)} m`, dataStartX, dataY)
       }
-      dataY = addDataRow('Google Maps', generateGoogleMapsLink(photo.exifData.gps.latitude, photo.exifData.gps.longitude), dataY, true)
+      dataY = addDataRow('Google Maps', generateGoogleMapsLink(photo.exifData.gps.latitude, photo.exifData.gps.longitude), dataStartX, dataY, true)
       dataY += 5
     }
 
@@ -164,14 +165,14 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Pro
       pdf.setFontSize(12)
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(0, 0, 0)
-      dataY = addText('Date & Time', dataStartX, dataY)
+      dataY = addText('Date & Time', dataStartX, dataY, dataColumnWidth)
       dataY += 3
       
       if (photo.exifData.dateTimeOriginal) {
-        dataY = addDataRow('Original Date', formatDate(new Date(photo.exifData.dateTimeOriginal)), dataY)
+        dataY = addDataRow('Original Date', formatDate(new Date(photo.exifData.dateTimeOriginal)), dataStartX, dataY)
       }
       if (photo.exifData.dateTime) {
-        dataY = addDataRow('File Date', formatDate(new Date(photo.exifData.dateTime)), dataY)
+        dataY = addDataRow('File Date', formatDate(new Date(photo.exifData.dateTime)), dataStartX, dataY)
       }
       dataY += 5
     }
@@ -181,17 +182,17 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Pro
       pdf.setFontSize(12)
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(0, 0, 0)
-      dataY = addText('Camera', dataStartX, dataY)
+      dataY = addText('Camera', dataStartX, dataY, dataColumnWidth)
       dataY += 3
       
       if (photo.exifData.make) {
-        dataY = addDataRow('Make', photo.exifData.make, dataY)
+        dataY = addDataRow('Make', photo.exifData.make, dataStartX, dataY)
       }
       if (photo.exifData.model) {
-        dataY = addDataRow('Model', photo.exifData.model, dataY)
+        dataY = addDataRow('Model', photo.exifData.model, dataStartX, dataY)
       }
       if (photo.exifData.software) {
-        dataY = addDataRow('Software', photo.exifData.software, dataY)
+        dataY = addDataRow('Software', photo.exifData.software, dataStartX, dataY)
       }
       dataY += 5
     }
@@ -201,20 +202,20 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Pro
       pdf.setFontSize(12)
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(0, 0, 0)
-      dataY = addText('Exposure', dataStartX, dataY)
+      dataY = addText('Exposure', dataStartX, dataY, dataColumnWidth)
       dataY += 3
       
       if (photo.exifData.exposure.aperture) {
-        dataY = addDataRow('Aperture', `f/${photo.exifData.exposure.aperture.toFixed(1)}`, dataY)
+        dataY = addDataRow('Aperture', `f/${photo.exifData.exposure.aperture.toFixed(1)}`, dataStartX, dataY)
       }
       if (photo.exifData.exposure.shutterSpeed) {
-        dataY = addDataRow('Shutter Speed', `1/${Math.round(1/photo.exifData.exposure.shutterSpeed)}s`, dataY)
+        dataY = addDataRow('Shutter Speed', `1/${Math.round(1/photo.exifData.exposure.shutterSpeed)}s`, dataStartX, dataY)
       }
       if (photo.exifData.exposure.iso) {
-        dataY = addDataRow('ISO', photo.exifData.exposure.iso.toString(), dataY)
+        dataY = addDataRow('ISO', photo.exifData.exposure.iso.toString(), dataStartX, dataY)
       }
       if (photo.exifData.exposure.fNumber) {
-        dataY = addDataRow('F-Number', `f/${photo.exifData.exposure.fNumber.toFixed(1)}`, dataY)
+        dataY = addDataRow('F-Number', `f/${photo.exifData.exposure.fNumber.toFixed(1)}`, dataStartX, dataY)
       }
       dataY += 5
     }
@@ -224,20 +225,20 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Pro
       pdf.setFontSize(12)
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(0, 0, 0)
-      dataY = addText('Settings', dataStartX, dataY)
+      dataY = addText('Settings', dataStartX, dataY, dataColumnWidth)
       dataY += 3
       
       if (photo.exifData.camera.focalLength) {
-        dataY = addDataRow('Focal Length', `${photo.exifData.camera.focalLength.toFixed(0)}mm`, dataY)
+        dataY = addDataRow('Focal Length', `${photo.exifData.camera.focalLength.toFixed(0)}mm`, dataStartX, dataY)
       }
       if (photo.exifData.camera.flash !== undefined) {
-        dataY = addDataRow('Flash', photo.exifData.camera.flash ? 'On' : 'Off', dataY)
+        dataY = addDataRow('Flash', photo.exifData.camera.flash ? 'On' : 'Off', dataStartX, dataY)
       }
       if (photo.exifData.camera.whiteBalance !== undefined) {
-        dataY = addDataRow('White Balance', photo.exifData.camera.whiteBalance ? 'Auto' : 'Manual', dataY)
+        dataY = addDataRow('White Balance', photo.exifData.camera.whiteBalance ? 'Auto' : 'Manual', dataStartX, dataY)
       }
       if (photo.exifData.camera.meteringMode !== undefined) {
-        dataY = addDataRow('Metering Mode', photo.exifData.camera.meteringMode.toString(), dataY)
+        dataY = addDataRow('Metering Mode', photo.exifData.camera.meteringMode.toString(), dataStartX, dataY)
       }
       dataY += 5
     }
@@ -247,15 +248,15 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Pro
       pdf.setFontSize(12)
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(0, 0, 0)
-      dataY = addText('Sun Data', dataStartX, dataY)
+      dataY = addText('Sun Data', dataStartX, dataY, dataColumnWidth)
       dataY += 3
       
-      dataY = addDataRow('Sunrise', formatSunTime(photo.exifData.sun.sunrise), dataY)
-      dataY = addDataRow('Sunset', formatSunTime(photo.exifData.sun.sunset), dataY)
-      dataY = addDataRow('Solar Noon', formatSunTime(photo.exifData.sun.solarNoon), dataY)
-      dataY = addDataRow('Day Length', `${Math.floor(photo.exifData.sun.dayLength / 60)}h ${photo.exifData.sun.dayLength % 60}m`, dataY)
-      dataY = addDataRow('Sun Position', formatSunPosition(photo.exifData.sun.sunPosition.azimuth, photo.exifData.sun.sunPosition.altitude), dataY)
-      dataY = addDataRow('Time of Day', photo.exifData.sun.isDaytime ? 'Daytime' : 'Nighttime', dataY)
+      dataY = addDataRow('Sunrise', formatSunTime(photo.exifData.sun.sunrise), dataStartX, dataY)
+      dataY = addDataRow('Sunset', formatSunTime(photo.exifData.sun.sunset), dataStartX, dataY)
+      dataY = addDataRow('Solar Noon', formatSunTime(photo.exifData.sun.solarNoon), dataStartX, dataY)
+      dataY = addDataRow('Day Length', `${Math.floor(photo.exifData.sun.dayLength / 60)}h ${photo.exifData.sun.dayLength % 60}m`, dataStartX, dataY)
+      dataY = addDataRow('Sun Position', formatSunPosition(photo.exifData.sun.sunPosition.azimuth, photo.exifData.sun.sunPosition.altitude), dataStartX, dataY)
+      dataY = addDataRow('Time of Day', photo.exifData.sun.isDaytime ? 'Daytime' : 'Nighttime', dataStartX, dataY)
       dataY += 5
     }
 
@@ -264,23 +265,23 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter): Pro
       pdf.setFontSize(12)
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(0, 0, 0)
-      dataY = addText('Image', dataStartX, dataY)
+      dataY = addText('Image', dataStartX, dataY, dataColumnWidth)
       dataY += 3
       
       if (photo.exifData.image.width && photo.exifData.image.height) {
-        dataY = addDataRow('Dimensions', `${photo.exifData.image.width} × ${photo.exifData.image.height}`, dataY)
+        dataY = addDataRow('Dimensions', `${photo.exifData.image.width} × ${photo.exifData.image.height}`, dataStartX, dataY)
       }
       if (photo.exifData.image.xResolution && photo.exifData.image.yResolution) {
-        dataY = addDataRow('Resolution', `${photo.exifData.image.xResolution} × ${photo.exifData.image.yResolution} DPI`, dataY)
+        dataY = addDataRow('Resolution', `${photo.exifData.image.xResolution} × ${photo.exifData.image.yResolution} DPI`, dataStartX, dataY)
       }
       if (photo.exifData.image.orientation) {
-        dataY = addDataRow('Orientation', photo.exifData.image.orientation.toString(), dataY)
+        dataY = addDataRow('Orientation', photo.exifData.image.orientation.toString(), dataStartX, dataY)
       }
       dataY += 5
     }
 
     // Move to the next line after the image and data
-    currentY = Math.max(currentY, dataY) + 10
+    currentY = Math.max(imageBottomY, dataY) + 10
   }
 
   // Save the PDF
