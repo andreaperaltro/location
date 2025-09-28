@@ -87,7 +87,7 @@ export function EXIFDisplay({ exifData, filters, title, isGeocoded, onTitleChang
             {/* Photo Title */}
             <CollapsibleSection
               title="Photo Title"
-              icon={<Edit2 className="h-4 w-4 text-blue-600" />}
+              icon={<Edit2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />}
               defaultOpen={true}
             >
               <div className="space-y-3">
@@ -101,11 +101,11 @@ export function EXIFDisplay({ exifData, filters, title, isGeocoded, onTitleChang
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       autoFocus
                     />
                   ) : (
-                    <span className="text-sm font-medium text-gray-900 flex-1">
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100 flex-1">
                       {title}
                     </span>
                   )}
@@ -158,21 +158,21 @@ export function EXIFDisplay({ exifData, filters, title, isGeocoded, onTitleChang
                 <div className="space-y-2">
                   {/* Show address if this photo is geocoded (title contains the address) */}
                   {isGeocoded && (
-                    <div>
-                      <p className="text-xs font-medium text-gray-600">Address</p>
-                      <p className="text-sm text-gray-900">{title}</p>
-                    </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Address</p>
+                    <p className="text-sm text-gray-900 dark:text-gray-100">{title}</p>
+                  </div>
                   )}
                   <div>
-                    <p className="text-xs font-medium text-gray-600">Coordinates</p>
-                    <p className="text-sm font-mono text-gray-900">
+                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Coordinates</p>
+                    <p className="text-sm font-mono text-gray-900 dark:text-gray-100">
                       {formatGPS({ lat: exifData.gps.latitude, lng: exifData.gps.longitude })}
                     </p>
                   </div>
               {exifData.gps.altitude && (
                 <div>
-                  <p className="text-xs font-medium text-gray-600">Altitude</p>
-                  <p className="text-sm font-mono text-gray-900">{exifData.gps.altitude.toFixed(2)} m</p>
+                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Altitude</p>
+                  <p className="text-sm font-mono text-gray-900 dark:text-gray-100">{exifData.gps.altitude.toFixed(2)} m</p>
                 </div>
               )}
               <div className="flex gap-2 pt-2">
