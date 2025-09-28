@@ -388,7 +388,9 @@ export function EXIFDisplay({ exifData, filters, title, isGeocoded, onTitleChang
                   {exifData.image.orientation && (
                     <div>
                       <p className="text-xs font-medium text-label">Orientation</p>
-                      <p className="text-sm text-value">{exifData.image.orientation}</p>
+                      <p className="text-sm text-value">
+                        {exifData.image.orientation === 1 ? 'Normal' : `Rotated (${exifData.image.orientation})`}
+                      </p>
                     </div>
                   )}
                 </div>

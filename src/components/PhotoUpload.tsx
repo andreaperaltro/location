@@ -6,6 +6,7 @@ import { Upload, Camera, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { extractEXIFData, EXIFData } from '@/lib/exif'
+import { getOrientedImageDataURL, getOrientationCSS } from '@/lib/imageOrientation'
 // Dynamic import for client-side only
 
 interface PhotoUploadProps {
@@ -92,9 +93,22 @@ export function PhotoUpload({ onPhotoProcessed, onMultiplePhotosProcessed }: Pho
         const exifData = await extractEXIFData(file)
         console.log('EXIF extraction completed for:', file.name, exifData)
         
+        // Apply orientation if available
+        let finalImageUrl = imageUrl
+        if (exifData.image?.orientation && exifData.image.orientation !== 1) {
+          console.log('Applying orientation correction:', exifData.image.orientation)
+          try {
+            finalImageUrl = await getOrientedImageDataURL(imageUrl, exifData.image.orientation)
+            console.log('Orientation correction applied successfully')
+          } catch (orientationError) {
+            console.warn('Failed to apply orientation correction:', orientationError)
+            // Keep original image if orientation correction fails
+          }
+        }
+        
         processedPhotos.push({
           exifData,
-          imageUrl
+          imageUrl: finalImageUrl
         })
       }
       
@@ -170,13 +184,28 @@ export function PhotoUpload({ onPhotoProcessed, onMultiplePhotosProcessed }: Pho
       } else {
         imageUrl = URL.createObjectURL(file)
       }
-      setPreview(imageUrl)
 
       // Extract EXIF data
       console.log('Starting EXIF extraction...')
       const exifData = await extractEXIFData(file)
       console.log('EXIF extraction completed:', exifData)
-      onPhotoProcessed(exifData, imageUrl)
+      
+      // Apply orientation if available
+      let finalImageUrl = imageUrl
+      if (exifData.image?.orientation && exifData.image.orientation !== 1) {
+        console.log('Applying orientation correction:', exifData.image.orientation)
+        try {
+          finalImageUrl = await getOrientedImageDataURL(imageUrl, exifData.image.orientation)
+          console.log('Orientation correction applied successfully')
+        } catch (orientationError) {
+          console.warn('Failed to apply orientation correction:', orientationError)
+          // Keep original image if orientation correction fails
+        }
+      }
+      
+      // Update preview with corrected image
+      setPreview(finalImageUrl)
+      onPhotoProcessed(exifData, finalImageUrl)
     } catch (error) {
       console.error('Error processing image:', error)
       alert('Error processing image. Please try again.')

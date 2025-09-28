@@ -4,6 +4,7 @@ import { PhotoData } from '@/app/page'
 import { DataFilter } from '@/components/DataFilter'
 import { formatDate, formatGPS, generateGoogleMapsLink } from './utils'
 import { formatSunTime, formatSunPosition } from './sun'
+import { getOrientedImageDataURL, getCorrectedDimensions } from './imageOrientation'
 
 // Helper function to sanitize filename
 function sanitizeFilename(filename: string): string {
@@ -180,30 +181,55 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
   }
 
   // Helper function to add an image to the PDF
-  const addImage = async (imageUrl: string, x: number, y: number, maxWidth: number, maxHeight: number) => {
+  const addImage = async (imageUrl: string, x: number, y: number, maxWidth: number, maxHeight: number, orientation?: number) => {
     try {
       // Create an image element to get dimensions
       const img = new Image()
       img.crossOrigin = 'anonymous'
       
       return new Promise<number>((resolve) => {
-        img.onload = () => {
-          // Always fill the full width of the column (45mm)
-          const mmWidth = maxWidth // Use the maxWidth directly (45mm)
-          const mmHeight = (img.height * maxWidth) / img.width // Calculate height maintaining aspect ratio
-          
-          // Only scale down if height exceeds maximum
-          let finalWidth = mmWidth
-          let finalHeight = mmHeight
-          if (mmHeight > maxHeight) {
-            const heightRatio = maxHeight / mmHeight
-            finalHeight = maxHeight
-            finalWidth = mmWidth * heightRatio
+        img.onload = async () => {
+          try {
+            // Apply orientation correction if needed
+            let finalImageUrl = imageUrl
+            let finalWidth = img.width
+            let finalHeight = img.height
+            
+            if (orientation && orientation !== 1) {
+              console.log('Applying orientation correction for PDF:', orientation)
+              try {
+                finalImageUrl = await getOrientedImageDataURL(imageUrl, orientation)
+                // Get corrected dimensions after orientation
+                const correctedDims = getCorrectedDimensions(img.width, img.height, orientation)
+                finalWidth = correctedDims.width
+                finalHeight = correctedDims.height
+                console.log('Orientation correction applied for PDF')
+              } catch (orientationError) {
+                console.warn('Failed to apply orientation correction for PDF:', orientationError)
+                // Use original image if correction fails
+              }
+            }
+            
+            // Calculate PDF dimensions maintaining aspect ratio
+            const mmWidth = maxWidth // Use the maxWidth directly (45mm)
+            const mmHeight = (finalHeight * maxWidth) / finalWidth // Calculate height maintaining aspect ratio
+            
+            // Only scale down if height exceeds maximum
+            let pdfWidth = mmWidth
+            let pdfHeight = mmHeight
+            if (mmHeight > maxHeight) {
+              const heightRatio = maxHeight / mmHeight
+              pdfHeight = maxHeight
+              pdfWidth = mmWidth * heightRatio
+            }
+            
+            // Add image to PDF
+            pdf.addImage(finalImageUrl, 'JPEG', x, y, pdfWidth, pdfHeight)
+            resolve(y + pdfHeight + 5)
+          } catch (error) {
+            console.error('Error processing image for PDF:', error)
+            resolve(y)
           }
-          
-          // Add image to PDF
-          pdf.addImage(imageUrl, 'JPEG', x, y, finalWidth, finalHeight)
-          resolve(y + finalHeight + 5)
         }
         img.onerror = () => {
           // If image fails to load, just return current Y
@@ -263,7 +289,14 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
     // Add the image on the left side
     const imageX = margin
     const imageY = currentY
-    const imageBottomY = await addImage(photo.imageUrl, imageX, imageY, imageMaxWidth, imageMaxHeight)
+    const imageBottomY = await addImage(
+      photo.imageUrl, 
+      imageX, 
+      imageY, 
+      imageMaxWidth, 
+      imageMaxHeight, 
+      photo.exifData.image?.orientation
+    )
     
     // Start data on the right side of the image with proper spacing
     const dataStartX = margin + imageMaxWidth + 10
