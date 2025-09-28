@@ -237,9 +237,22 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
   for (let i = 0; i < photos.length; i++) {
     const photo = photos[i]
     
-    // Check if we need a new page for the entire photo section
-    const estimatedPhotoHeight = 100 // Approximate height for photo + data
-    if (currentY + estimatedPhotoHeight > pageHeight - margin) {
+    // Calculate estimated content height for this photo
+    let estimatedContentHeight = 20 // Photo title
+    estimatedContentHeight += 80 // Image height
+    estimatedContentHeight += 10 // Spacing
+    
+    // Add estimated height for each enabled section
+    if (filters.location && photo.exifData.gps) estimatedContentHeight += 40
+    if (filters.dateTime && (photo.exifData.dateTime || photo.exifData.dateTimeOriginal)) estimatedContentHeight += 30
+    if (filters.camera && (photo.exifData.make || photo.exifData.model)) estimatedContentHeight += 30
+    if (filters.exposure && photo.exifData.exposure) estimatedContentHeight += 40
+    if (filters.settings && photo.exifData.camera) estimatedContentHeight += 30
+    if (filters.sun && photo.exifData.sun) estimatedContentHeight += 50
+    if (filters.image && photo.exifData.image) estimatedContentHeight += 30
+    
+    // If content won't fit on current page, start fresh on new page
+    if (currentY + estimatedContentHeight > pageHeight - margin) {
       pdf.addPage()
       currentY = margin
     }
@@ -262,6 +275,13 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
 
         // Location section
         if (filters.location && photo.exifData.gps) {
+          // Check if we have enough space for the entire location section
+          const locationSectionHeight = 50 // Estimated height for location section
+          if (dataY + locationSectionHeight > pageHeight - margin) {
+            pdf.addPage()
+            dataY = margin
+          }
+          
           pdf.setFontSize(12)
           pdf.setFont('helvetica', 'bold')
           pdf.setTextColor(0, 0, 0)
@@ -274,9 +294,9 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
           }
           
           dataY = addDataRow('Coordinates', formatGPS({ lat: photo.exifData.gps.latitude, lng: photo.exifData.gps.longitude }), dataStartX, dataY)
-      if (photo.exifData.gps.altitude) {
-        dataY = addDataRow('Altitude', `${photo.exifData.gps.altitude.toFixed(2)} m`, dataStartX, dataY)
-      }
+          if (photo.exifData.gps.altitude) {
+            dataY = addDataRow('Altitude', `${photo.exifData.gps.altitude.toFixed(2)} m`, dataStartX, dataY)
+          }
           // Add Google Maps link as clickable text
           pdf.setFontSize(10)
           pdf.setFont('helvetica', 'bold')
@@ -293,11 +313,18 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
           // Add the actual link
           pdf.link(linkX, dataY - 2, 30, 4, { url: mapsLink })
           dataY += 4
-      dataY += 5
-    }
+          dataY += 5
+        }
 
     // Date/Time section
     if (filters.dateTime && (photo.exifData.dateTime || photo.exifData.dateTimeOriginal || photo.exifData.dateTimeDigitized)) {
+      // Check if we have enough space for the entire date/time section
+      const dateTimeSectionHeight = 30
+      if (dataY + dateTimeSectionHeight > pageHeight - margin) {
+        pdf.addPage()
+        dataY = margin
+      }
+      
       pdf.setFontSize(12)
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(0, 0, 0)
@@ -315,6 +342,13 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
 
     // Camera section
     if (filters.camera && (photo.exifData.make || photo.exifData.model || photo.exifData.software)) {
+      // Check if we have enough space for the entire camera section
+      const cameraSectionHeight = 30
+      if (dataY + cameraSectionHeight > pageHeight - margin) {
+        pdf.addPage()
+        dataY = margin
+      }
+      
       pdf.setFontSize(12)
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(0, 0, 0)
@@ -335,6 +369,13 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
 
     // Exposure section
     if (filters.exposure && photo.exifData.exposure) {
+      // Check if we have enough space for the entire exposure section
+      const exposureSectionHeight = 40
+      if (dataY + exposureSectionHeight > pageHeight - margin) {
+        pdf.addPage()
+        dataY = margin
+      }
+      
       pdf.setFontSize(12)
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(0, 0, 0)
@@ -358,6 +399,13 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
 
     // Settings section
     if (filters.settings && photo.exifData.camera) {
+      // Check if we have enough space for the entire settings section
+      const settingsSectionHeight = 30
+      if (dataY + settingsSectionHeight > pageHeight - margin) {
+        pdf.addPage()
+        dataY = margin
+      }
+      
       pdf.setFontSize(12)
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(0, 0, 0)
@@ -381,6 +429,13 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
 
     // Sun Data section
     if (filters.sun && photo.exifData.sun) {
+      // Check if we have enough space for the entire sun data section
+      const sunDataSectionHeight = 50
+      if (dataY + sunDataSectionHeight > pageHeight - margin) {
+        pdf.addPage()
+        dataY = margin
+      }
+      
       pdf.setFontSize(12)
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(0, 0, 0)
@@ -398,6 +453,13 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
 
     // Image section
     if (filters.image && photo.exifData.image) {
+      // Check if we have enough space for the entire image section
+      const imageSectionHeight = 30
+      if (dataY + imageSectionHeight > pageHeight - margin) {
+        pdf.addPage()
+        dataY = margin
+      }
+      
       pdf.setFontSize(12)
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(0, 0, 0)
