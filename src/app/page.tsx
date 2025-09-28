@@ -174,7 +174,7 @@ export default function Home() {
                           type="text"
                           value={reportTitle}
                           onChange={(e) => setReportTitle(e.target.value)}
-                          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent input-field placeholder-muted"
+                          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent input-field placeholder:text-gray-700 dark:placeholder:text-gray-500"
                           placeholder="Enter report title..."
                         />
                       </div>
@@ -186,7 +186,7 @@ export default function Home() {
                           id="report-description"
                           value={reportDescription}
                           onChange={(e) => setReportDescription(e.target.value)}
-                          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent input-field placeholder-muted"
+                          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent input-field placeholder:text-gray-700 dark:placeholder:text-gray-500"
                           placeholder="Enter report description..."
                           rows={3}
                         />
