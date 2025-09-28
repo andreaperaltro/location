@@ -1,193 +1,106 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { Upload, MapPin, Sun, Calendar, Camera } from 'lucide-react';
+import { useState } from 'react'
+import { PhotoUpload } from '@/components/PhotoUpload'
+import { EXIFDisplay } from '@/components/EXIFDisplay'
+import { EXIFData } from '@/lib/exif'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { MapPin, Camera, Clock } from 'lucide-react'
 
-interface PhotoData {
-  url: string;
-  takenAt?: string;
-  lat?: number;
-  lng?: number;
-  address?: string;
-  sunTimes?: {
-    sunrise: string;
-    sunset: string;
-    goldenStart: string;
-    goldenEnd: string;
-  };
-}
+export default function Home() {
+  const [exifData, setExifData] = useState<EXIFData | null>(null)
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
 
-export default function SimplePhotoUpload() {
-  const [photoData, setPhotoData] = useState<PhotoData | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const handlePhotoProcessed = (data: EXIFData, url: string) => {
+    setExifData(data)
+    setImageUrl(url)
+  }
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setLoading(true);
-    setError(null);
-    setPhotoData(null);
-
-    try {
-      // Create a preview URL for the image
-      const previewUrl = URL.createObjectURL(file);
-      
-      // For now, let's just show the image and simulate some data
-      // In a real implementation, you'd upload to Supabase and process EXIF
-      setPhotoData({
-        url: previewUrl,
-        takenAt: new Date().toISOString(),
-        lat: 37.7749, // San Francisco coordinates as example
-        lng: -122.4194,
-        address: "San Francisco, CA, USA",
-        sunTimes: {
-          sunrise: "6:45 AM",
-          sunset: "7:30 PM",
-          goldenStart: "6:15 AM",
-          goldenEnd: "7:00 PM"
-        }
-      });
-    } catch (err) {
-      setError('Failed to process photo');
-      console.error('Error:', err);
-    } finally {
-      setLoading(false);
+  const resetApp = () => {
+    if (imageUrl) {
+      URL.revokeObjectURL(imageUrl)
     }
-  };
+    setExifData(null)
+    setImageUrl(null)
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Photo Location Analyzer</h1>
-          <p className="text-gray-600">Upload a photo to see its EXIF data, location, and sun times</p>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            Location Manager
+          </h1>
+          <p className="text-lg text-gray-600 dark:text-gray-300">
+            Extract location and EXIF data from your photos
+          </p>
         </div>
 
-        {/* Upload Area */}
-        <div className="bg-white rounded-lg shadow-md p-8 mb-8">
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-            <Upload className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-            <label htmlFor="photo-upload" className="cursor-pointer">
-              <span className="text-lg font-medium text-gray-700">Click to upload a photo</span>
-              <input
-                id="photo-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-            </label>
-            <p className="text-sm text-gray-500 mt-2">Supports JPG, PNG, WebP</p>
-          </div>
-        </div>
+        {!exifData ? (
+          <PhotoUpload onPhotoProcessed={handlePhotoProcessed} />
+        ) : (
+          <div className="space-y-6">
+            {/* Image Preview */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Camera className="h-5 w-5 text-primary" />
+                  Photo Preview
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="relative">
+                  <img
+                    src={imageUrl!}
+                    alt="Uploaded photo"
+                    className="w-full h-auto max-h-96 object-contain rounded-lg"
+                  />
+                </div>
+                <button
+                  onClick={resetApp}
+                  className="mt-4 text-sm text-muted-foreground hover:text-foreground underline"
+                >
+                  Upload another photo
+                </button>
+              </CardContent>
+            </Card>
 
-        {/* Loading State */}
-        {loading && (
-          <div className="bg-white rounded-lg shadow-md p-8 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Processing photo...</p>
+            {/* EXIF Data Display */}
+            <EXIFDisplay exifData={exifData} imageUrl={imageUrl!} />
           </div>
         )}
 
-        {/* Error State */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
-            <p className="text-red-700">{error}</p>
-          </div>
-        )}
-
-        {/* Photo Data Display */}
-        {photoData && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Photo */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <Camera className="h-5 w-5" />
-                Photo
-              </h2>
-              <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
-                <img
-                  src={photoData.url}
-                  alt="Uploaded photo"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-
-            {/* Data */}
-            <div className="space-y-6">
-              {/* EXIF Data */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Photo Details
-                </h2>
-                <div className="space-y-3">
-                  <div>
-                    <span className="font-medium text-gray-700">Taken:</span>
-                    <p className="text-gray-600">
-                      {photoData.takenAt ? new Date(photoData.takenAt).toLocaleString() : 'Unknown'}
-                    </p>
-                  </div>
+        {/* Quick Stats */}
+        {exifData && (
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle>Quick Summary</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">
+                    {exifData.gps?.latitude && exifData.gps?.longitude ? 'Location Found' : 'No Location'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-blue-500" />
+                  <span className="text-sm">
+                    {exifData.dateTimeOriginal || exifData.dateTime ? 'Date Available' : 'No Date'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Camera className="h-4 w-4 text-purple-500" />
+                  <span className="text-sm">
+                    {exifData.make || exifData.model ? 'Camera Info' : 'No Camera Info'}
+                  </span>
                 </div>
               </div>
-
-              {/* Location */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  Location
-                </h2>
-                <div className="space-y-3">
-                  <div>
-                    <span className="font-medium text-gray-700">Address:</span>
-                    <p className="text-gray-600">{photoData.address || 'Unknown'}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700">Coordinates:</span>
-                    <p className="text-gray-600">
-                      {photoData.lat && photoData.lng 
-                        ? `${photoData.lat.toFixed(6)}, ${photoData.lng.toFixed(6)}`
-                        : 'Unknown'
-                      }
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Sun Times */}
-              {photoData.sunTimes && (
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                    <Sun className="h-5 w-5" />
-                    Sun Times
-                  </h2>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center p-3 bg-yellow-50 rounded-lg">
-                      <p className="text-sm font-medium text-gray-700">Sunrise</p>
-                      <p className="text-lg font-bold text-orange-600">{photoData.sunTimes.sunrise}</p>
-                    </div>
-                    <div className="text-center p-3 bg-orange-50 rounded-lg">
-                      <p className="text-sm font-medium text-gray-700">Sunset</p>
-                      <p className="text-lg font-bold text-red-600">{photoData.sunTimes.sunset}</p>
-                    </div>
-                    <div className="text-center p-3 bg-yellow-100 rounded-lg">
-                      <p className="text-sm font-medium text-gray-700">Golden Hour Start</p>
-                      <p className="text-lg font-bold text-yellow-600">{photoData.sunTimes.goldenStart}</p>
-                    </div>
-                    <div className="text-center p-3 bg-orange-100 rounded-lg">
-                      <p className="text-sm font-medium text-gray-700">Golden Hour End</p>
-                      <p className="text-lg font-bold text-orange-600">{photoData.sunTimes.goldenEnd}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>
-  );
+  )
 }
