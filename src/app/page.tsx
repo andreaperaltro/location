@@ -5,7 +5,9 @@ import Image from 'next/image'
 import { PhotoUpload } from '@/components/PhotoUpload'
 import { EXIFDisplay } from '@/components/EXIFDisplay'
 import { DataFilter, DataFilter as DataFilterType } from '@/components/DataFilter'
+import { PhotoTitle } from '@/components/PhotoTitle'
 import { EXIFData } from '@/lib/exif'
+import { reverseGeocode, generateFallbackTitle } from '@/lib/geocoding'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Camera, Trash2, Plus } from 'lucide-react'
@@ -14,6 +16,8 @@ interface PhotoData {
   exifData: EXIFData
   imageUrl: string
   id: string
+  title: string
+  isGeocoded: boolean
 }
 
 export default function Home() {
@@ -28,21 +32,67 @@ export default function Home() {
     image: true,
   })
 
-  const handlePhotoProcessed = (data: EXIFData, url: string) => {
+  const handlePhotoProcessed = async (data: EXIFData, url: string) => {
+    const id = Date.now().toString()
+    let title = generateFallbackTitle(photos.length)
+    let isGeocoded = false
+
+    // Try to get address from GPS coordinates
+    if (data.gps) {
+      try {
+        const geocodingResult = await reverseGeocode(data.gps.latitude, data.gps.longitude)
+        if (geocodingResult.success) {
+          title = geocodingResult.address
+          isGeocoded = true
+        }
+      } catch (error) {
+        console.error('Geocoding failed:', error)
+      }
+    }
+
     const newPhoto: PhotoData = {
       exifData: data,
       imageUrl: url,
-      id: Date.now().toString()
+      id,
+      title,
+      isGeocoded
     }
     setPhotos(prev => [...prev, newPhoto])
   }
 
-  const handleMultiplePhotosProcessed = (newPhotos: Array<{exifData: EXIFData, imageUrl: string}>) => {
-    const photosWithIds = newPhotos.map(photo => ({
-      ...photo,
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 9)
-    }))
-    setPhotos(prev => [...prev, ...photosWithIds])
+  const handleMultiplePhotosProcessed = async (newPhotos: Array<{exifData: EXIFData, imageUrl: string, title?: string, isGeocoded?: boolean}>) => {
+    const processedPhotos: PhotoData[] = []
+    
+    for (let i = 0; i < newPhotos.length; i++) {
+      const photo = newPhotos[i]
+      const id = Date.now().toString() + Math.random().toString(36).substr(2, 9)
+      
+      // Use provided title/isGeocoded if available, otherwise generate them
+      let title = photo.title || generateFallbackTitle(photos.length + i)
+      let isGeocoded = photo.isGeocoded || false
+
+      // If no title was provided, try to get address from GPS coordinates
+      if (!photo.title && photo.exifData.gps) {
+        try {
+          const geocodingResult = await reverseGeocode(photo.exifData.gps.latitude, photo.exifData.gps.longitude)
+          if (geocodingResult.success) {
+            title = geocodingResult.address
+            isGeocoded = true
+          }
+        } catch (error) {
+          console.error('Geocoding failed for photo', i + 1, ':', error)
+        }
+      }
+
+      processedPhotos.push({
+        ...photo,
+        id,
+        title,
+        isGeocoded
+      })
+    }
+    
+    setPhotos(prev => [...prev, ...processedPhotos])
   }
 
   const removePhoto = (id: string) => {
@@ -60,6 +110,12 @@ export default function Home() {
       URL.revokeObjectURL(photo.imageUrl)
     })
     setPhotos([])
+  }
+
+  const handleTitleChange = (id: string, newTitle: string) => {
+    setPhotos(prev => prev.map(photo => 
+      photo.id === id ? { ...photo, title: newTitle, isGeocoded: false } : photo
+    ))
   }
 
   return (
@@ -89,10 +145,14 @@ export default function Home() {
             {/* Photos List */}
             {photos.map((photo, index) => (
               <div key={photo.id} className="space-y-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-gray-900">
-                    Photo {index + 1}
-                  </h2>
+                {/* Photo Title */}
+                <PhotoTitle
+                  title={photo.title}
+                  onTitleChange={(newTitle) => handleTitleChange(photo.id, newTitle)}
+                  isGeocoded={photo.isGeocoded}
+                />
+                
+                <div className="flex items-center justify-end mb-4">
                   <Button
                     variant="destructive"
                     size="sm"
@@ -176,7 +236,8 @@ export default function Home() {
                     // Process each file properly with EXIF extraction and HEIC conversion
                     const processedPhotos = []
                     
-                    for (const file of imageFiles) {
+                    for (let i = 0; i < imageFiles.length; i++) {
+                      const file = imageFiles[i]
                       try {
                         // Import EXIF extraction
                         const { extractEXIFData } = await import('@/lib/exif')
@@ -221,9 +282,28 @@ export default function Home() {
                         // Extract EXIF data
                         const exifData = await extractEXIFData(file)
                         
+                        // Generate title
+                        let title = generateFallbackTitle(photos.length + i)
+                        let isGeocoded = false
+
+                        // Try to get address from GPS coordinates
+                        if (exifData.gps) {
+                          try {
+                            const geocodingResult = await reverseGeocode(exifData.gps.latitude, exifData.gps.longitude)
+                            if (geocodingResult.success) {
+                              title = geocodingResult.address
+                              isGeocoded = true
+                            }
+                          } catch (error) {
+                            console.error('Geocoding failed for additional photo', i + 1, ':', error)
+                          }
+                        }
+                        
                         processedPhotos.push({
                           exifData,
-                          imageUrl
+                          imageUrl,
+                          title,
+                          isGeocoded
                         })
                       } catch (error) {
                         console.error('Error processing file:', file.name, error)
