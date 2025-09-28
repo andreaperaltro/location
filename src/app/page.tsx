@@ -148,35 +148,77 @@ export default function Home() {
               type="file"
               accept="image/*,.heic,.heif"
               multiple
-              onChange={(e) => {
+              onChange={async (e) => {
                 const files = e.target.files
                 if (files && files.length > 0) {
-                  if (files.length === 1) {
-                    // Handle single file
-                    const file = files[0]
-                    const isImage = file.type.startsWith('image/') || 
-                                   file.name.toLowerCase().endsWith('.heic') || 
-                                   file.name.toLowerCase().endsWith('.heif')
+                  const fileArray = Array.from(files)
+                  const imageFiles = fileArray.filter(file => 
+                    file.type.startsWith('image/') || 
+                    file.name.toLowerCase().endsWith('.heic') || 
+                    file.name.toLowerCase().endsWith('.heif')
+                  )
+                  
+                  if (imageFiles.length > 0) {
+                    // Process each file properly with EXIF extraction and HEIC conversion
+                    const processedPhotos = []
                     
-                    if (isImage) {
-                      // Process single file
-                      handlePhotoProcessed({} as EXIFData, URL.createObjectURL(file))
+                    for (const file of imageFiles) {
+                      try {
+                        // Import EXIF extraction
+                        const { extractEXIFData } = await import('@/lib/exif')
+                        
+                        // Create preview - convert HEIC files to displayable format
+                        let imageUrl: string
+                        if (file.type === 'image/heic' || file.name.toLowerCase().endsWith('.heic') || 
+                            file.type === 'image/heif' || file.name.toLowerCase().endsWith('.heif')) {
+                          // Convert HEIC to JPEG for preview using heic-to library
+                          try {
+                            const { heicTo } = await import('heic-to')
+                            const jpegBlob = await heicTo({
+                              blob: file,
+                              type: 'image/jpeg',
+                              quality: 0.8
+                            })
+                            imageUrl = URL.createObjectURL(jpegBlob)
+                          } catch (conversionError) {
+                            console.error('HEIC conversion failed:', conversionError)
+                            // Fallback to placeholder
+                            imageUrl = 'data:image/svg+xml;base64,' + btoa(`
+                              <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+                                <rect width="100%" height="100%" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2" stroke-dasharray="5,5"/>
+                                <circle cx="200" cy="120" r="30" fill="#3b82f6" opacity="0.1"/>
+                                <text x="200" y="120" text-anchor="middle" dy=".3em" font-family="Arial" font-size="24" fill="#3b82f6">CAMERA</text>
+                                <text x="200" y="160" text-anchor="middle" dy=".3em" font-family="Arial" font-size="16" font-weight="bold" fill="#374151">
+                                  HEIC Preview Not Available
+                                </text>
+                                <text x="200" y="180" text-anchor="middle" dy=".3em" font-family="Arial" font-size="12" fill="#6b7280">
+                                  ${file.name}
+                                </text>
+                                <text x="200" y="200" text-anchor="middle" dy=".3em" font-family="Arial" font-size="10" fill="#9ca3af">
+                                  EXIF data will still be extracted
+                                </text>
+                              </svg>
+                            `)
+                          }
+                        } else {
+                          imageUrl = URL.createObjectURL(file)
+                        }
+
+                        // Extract EXIF data
+                        const exifData = await extractEXIFData(file)
+                        
+                        processedPhotos.push({
+                          exifData,
+                          imageUrl
+                        })
+                      } catch (error) {
+                        console.error('Error processing file:', file.name, error)
+                      }
                     }
-                  } else {
-                    // Handle multiple files
-                    const fileArray = Array.from(files)
-                    const imageFiles = fileArray.filter(file => 
-                      file.type.startsWith('image/') || 
-                      file.name.toLowerCase().endsWith('.heic') || 
-                      file.name.toLowerCase().endsWith('.heif')
-                    )
                     
-                    const processedPhotos = imageFiles.map(file => ({
-                      exifData: {} as EXIFData,
-                      imageUrl: URL.createObjectURL(file)
-                    }))
-                    
-                    handleMultiplePhotosProcessed(processedPhotos)
+                    if (processedPhotos.length > 0) {
+                      handleMultiplePhotosProcessed(processedPhotos)
+                    }
                   }
                 }
                 // Reset input
