@@ -239,11 +239,11 @@ export function PhotoUpload({ onPhotoProcessed, onMultiplePhotosProcessed }: Pho
                     <Camera className="h-8 w-8 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Upload Photos</h3>
-                    <p className="text-gray-600 dark:text-gray-200">
+                    <h3 className="text-lg font-semibold text-primary">Upload Photos</h3>
+                    <p className="text-secondary">
                       Drag and drop images here, or click to browse
                     </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-300 mt-1">
+                    <p className="text-sm text-muted mt-1">
                       Supports JPEG, PNG, HEIC, and other image formats. You can select multiple files at once.
                     </p>
                   </div>

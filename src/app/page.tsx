@@ -135,10 +135,10 @@ export default function Home() {
           <div className="container mx-auto px-4 py-8">
             <div className="flex justify-between items-center mb-8">
               <div className="text-center flex-1">
-                <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                <h1 className="text-4xl font-bold text-primary mb-4">
                   Location Manager
                 </h1>
-                <p className="text-lg text-gray-600 dark:text-gray-300">
+                <p className="text-lg text-secondary">
                   Extract location and EXIF data from your photos
                 </p>
               </div>
@@ -166,7 +166,7 @@ export default function Home() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div>
-                        <label htmlFor="report-title" className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="report-title" className="block text-sm font-medium text-label mb-2">
                           Report Title
                         </label>
                         <input
@@ -174,19 +174,19 @@ export default function Home() {
                           type="text"
                           value={reportTitle}
                           onChange={(e) => setReportTitle(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent input-field placeholder-muted"
                           placeholder="Enter report title..."
                         />
                       </div>
                       <div>
-                        <label htmlFor="report-description" className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="report-description" className="block text-sm font-medium text-label mb-2">
                           Report Description (Optional)
                         </label>
                         <textarea
                           id="report-description"
                           value={reportDescription}
                           onChange={(e) => setReportDescription(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent input-field placeholder-muted"
                           placeholder="Enter report description..."
                           rows={3}
                         />

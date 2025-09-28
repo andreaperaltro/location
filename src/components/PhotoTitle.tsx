@@ -53,11 +53,11 @@ export function PhotoTitle({ title, onTitleChange, isGeocoded }: PhotoTitleProps
                 value={editValue}
                 onChange={(e) => setEditValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 px-2 py-1 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 input-field"
                 autoFocus
               />
             ) : (
-              <h2 className="text-lg font-semibold text-gray-900 flex-1">
+              <h2 className="text-lg font-semibold text-value flex-1">
                 {title}
               </h2>
             )}

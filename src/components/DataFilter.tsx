@@ -72,9 +72,9 @@ export function DataFilter({ filters, onFiltersChange }: DataFilterProps) {
     <Card className="w-full max-w-4xl mx-auto mb-6">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between">
-          <span className="text-lg text-gray-900 dark:text-white">Data Filters</span>
+          <span className="text-lg text-primary">Data Filters</span>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600 dark:text-gray-300">
+            <span className="text-sm text-secondary">
               {activeCount} of {filterOptions.length} sections active
             </span>
             <Button
@@ -122,7 +122,7 @@ export function DataFilter({ filters, onFiltersChange }: DataFilterProps) {
                   <div className={`${option.color}`}>
                     {option.icon}
                   </div>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  <span className="text-sm font-medium text-primary">
                     {option.label}
                   </span>
                 </label>

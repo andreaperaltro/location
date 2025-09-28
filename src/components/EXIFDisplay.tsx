@@ -35,12 +35,12 @@ function CollapsibleSection({ title, icon, children, defaultOpen = false }: Coll
           >
             <div className="flex items-center gap-2">
               {icon}
-              <span className="font-medium text-sm text-gray-900 dark:text-gray-100">{title}</span>
+              <span className="font-medium text-sm text-value">{title}</span>
             </div>
             {isOpen ? (
-              <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+              <ChevronDown className="h-4 w-4 text-muted" />
             ) : (
-              <ChevronRight className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+              <ChevronRight className="h-4 w-4 text-muted" />
             )}
           </button>
           {isOpen && (
@@ -101,11 +101,11 @@ export function EXIFDisplay({ exifData, filters, title, isGeocoded, onTitleChang
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 px-2 py-1 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 input-field"
                       autoFocus
                     />
                   ) : (
-                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100 flex-1">
+                    <span className="text-sm font-medium text-value flex-1">
                       {title}
                     </span>
                   )}
@@ -159,20 +159,20 @@ export function EXIFDisplay({ exifData, filters, title, isGeocoded, onTitleChang
                   {/* Show address if this photo is geocoded (title contains the address) */}
                   {isGeocoded && (
                   <div>
-                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Address</p>
-                    <p className="text-sm text-gray-900 dark:text-gray-100">{title}</p>
+                    <p className="text-xs font-medium text-label">Address</p>
+                    <p className="text-sm text-value">{title}</p>
                   </div>
                   )}
                   <div>
-                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Coordinates</p>
-                    <p className="text-sm font-mono text-gray-900 dark:text-gray-100">
+                    <p className="text-xs font-medium text-label">Coordinates</p>
+                    <p className="text-sm font-mono text-value">
                       {formatGPS({ lat: exifData.gps.latitude, lng: exifData.gps.longitude })}
                     </p>
                   </div>
               {exifData.gps.altitude && (
                 <div>
-                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Altitude</p>
-                  <p className="text-sm font-mono text-gray-900 dark:text-gray-100">{exifData.gps.altitude.toFixed(2)} m</p>
+                  <p className="text-xs font-medium text-label">Altitude</p>
+                  <p className="text-sm font-mono text-value">{exifData.gps.altitude.toFixed(2)} m</p>
                 </div>
               )}
               <div className="flex gap-2 pt-2">
@@ -211,14 +211,14 @@ export function EXIFDisplay({ exifData, filters, title, isGeocoded, onTitleChang
             <div className="space-y-2">
               {exifData.dateTimeOriginal && (
                 <div>
-                  <p className="text-xs font-medium text-gray-600">Original Date</p>
-                  <p className="text-sm text-gray-900">{formatDate(new Date(exifData.dateTimeOriginal))}</p>
+                  <p className="text-xs font-medium text-label">Original Date</p>
+                  <p className="text-sm text-value">{formatDate(new Date(exifData.dateTimeOriginal))}</p>
                 </div>
               )}
               {exifData.dateTime && (
                 <div>
-                  <p className="text-xs font-medium text-gray-600">File Date</p>
-                  <p className="text-sm text-gray-900">{formatDate(new Date(exifData.dateTime))}</p>
+                  <p className="text-xs font-medium text-label">File Date</p>
+                  <p className="text-sm text-value">{formatDate(new Date(exifData.dateTime))}</p>
                 </div>
               )}
             </div>
@@ -234,20 +234,20 @@ export function EXIFDisplay({ exifData, filters, title, isGeocoded, onTitleChang
             <div className="space-y-2">
               {exifData.make && (
                 <div>
-                  <p className="text-xs font-medium text-gray-600">Make</p>
-                  <p className="text-sm text-gray-900">{exifData.make}</p>
+                  <p className="text-xs font-medium text-label">Make</p>
+                  <p className="text-sm text-value">{exifData.make}</p>
                 </div>
               )}
               {exifData.model && (
                 <div>
-                  <p className="text-xs font-medium text-gray-600">Model</p>
-                  <p className="text-sm text-gray-900">{exifData.model}</p>
+                  <p className="text-xs font-medium text-label">Model</p>
+                  <p className="text-sm text-value">{exifData.model}</p>
                 </div>
               )}
               {exifData.software && (
                 <div>
-                  <p className="text-xs font-medium text-gray-600">Software</p>
-                  <p className="text-sm text-gray-900">{exifData.software}</p>
+                  <p className="text-xs font-medium text-label">Software</p>
+                  <p className="text-sm text-value">{exifData.software}</p>
                 </div>
               )}
             </div>
@@ -263,26 +263,26 @@ export function EXIFDisplay({ exifData, filters, title, isGeocoded, onTitleChang
             <div className="grid grid-cols-2 gap-3">
               {exifData.exposure.aperture && (
                 <div>
-                  <p className="text-xs font-medium text-gray-600">Aperture</p>
-                  <p className="text-sm font-mono text-gray-900">f/{exifData.exposure.aperture.toFixed(1)}</p>
+                  <p className="text-xs font-medium text-label">Aperture</p>
+                  <p className="text-sm font-mono text-value">f/{exifData.exposure.aperture.toFixed(1)}</p>
                 </div>
               )}
               {exifData.exposure.shutterSpeed && (
                 <div>
-                  <p className="text-xs font-medium text-gray-600">Shutter</p>
-                  <p className="text-sm font-mono text-gray-900">1/{Math.round(1/exifData.exposure.shutterSpeed)}s</p>
+                  <p className="text-xs font-medium text-label">Shutter</p>
+                  <p className="text-sm font-mono text-value">1/{Math.round(1/exifData.exposure.shutterSpeed)}s</p>
                 </div>
               )}
               {exifData.exposure.iso && (
                 <div>
-                  <p className="text-xs font-medium text-gray-600">ISO</p>
-                  <p className="text-sm font-mono text-gray-900">{exifData.exposure.iso}</p>
+                  <p className="text-xs font-medium text-label">ISO</p>
+                  <p className="text-sm font-mono text-value">{exifData.exposure.iso}</p>
                 </div>
               )}
               {exifData.exposure.fNumber && (
                 <div>
-                  <p className="text-xs font-medium text-gray-600">F-Number</p>
-                  <p className="text-sm font-mono text-gray-900">f/{exifData.exposure.fNumber.toFixed(1)}</p>
+                  <p className="text-xs font-medium text-label">F-Number</p>
+                  <p className="text-sm font-mono text-value">f/{exifData.exposure.fNumber.toFixed(1)}</p>
                 </div>
               )}
             </div>
@@ -298,26 +298,26 @@ export function EXIFDisplay({ exifData, filters, title, isGeocoded, onTitleChang
             <div className="grid grid-cols-2 gap-3">
               {exifData.camera.focalLength && (
                 <div>
-                  <p className="text-xs font-medium text-gray-600">Focal Length</p>
-                  <p className="text-sm font-mono text-gray-900">{exifData.camera.focalLength.toFixed(0)}mm</p>
+                  <p className="text-xs font-medium text-label">Focal Length</p>
+                  <p className="text-sm font-mono text-value">{exifData.camera.focalLength.toFixed(0)}mm</p>
                 </div>
               )}
               {exifData.camera.flash !== undefined && (
                 <div>
-                  <p className="text-xs font-medium text-gray-600">Flash</p>
-                  <p className="text-sm text-gray-900">{exifData.camera.flash ? 'On' : 'Off'}</p>
+                  <p className="text-xs font-medium text-label">Flash</p>
+                  <p className="text-sm text-value">{exifData.camera.flash ? 'On' : 'Off'}</p>
                 </div>
               )}
               {exifData.camera.whiteBalance !== undefined && (
                 <div>
-                  <p className="text-xs font-medium text-gray-600">WB</p>
-                  <p className="text-sm text-gray-900">{exifData.camera.whiteBalance ? 'Auto' : 'Manual'}</p>
+                  <p className="text-xs font-medium text-label">WB</p>
+                  <p className="text-sm text-value">{exifData.camera.whiteBalance ? 'Auto' : 'Manual'}</p>
                 </div>
               )}
               {exifData.camera.meteringMode !== undefined && (
                 <div>
-                  <p className="text-xs font-medium text-gray-600">Metering</p>
-                  <p className="text-sm text-gray-900">{exifData.camera.meteringMode}</p>
+                  <p className="text-xs font-medium text-label">Metering</p>
+                  <p className="text-sm text-value">{exifData.camera.meteringMode}</p>
                 </div>
               )}
             </div>
@@ -334,31 +334,31 @@ export function EXIFDisplay({ exifData, filters, title, isGeocoded, onTitleChang
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <p className="text-xs font-medium text-gray-600">Sunrise</p>
-                      <p className="text-sm font-mono text-gray-900">{formatSunTime(exifData.sun.sunrise)}</p>
+                      <p className="text-xs font-medium text-label">Sunrise</p>
+                      <p className="text-sm font-mono text-value">{formatSunTime(exifData.sun.sunrise)}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-gray-600">Sunset</p>
-                      <p className="text-sm font-mono text-gray-900">{formatSunTime(exifData.sun.sunset)}</p>
+                      <p className="text-xs font-medium text-label">Sunset</p>
+                      <p className="text-sm font-mono text-value">{formatSunTime(exifData.sun.sunset)}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <p className="text-xs font-medium text-gray-600">Solar Noon</p>
-                      <p className="text-sm font-mono text-gray-900">{formatSunTime(exifData.sun.solarNoon)}</p>
+                      <p className="text-xs font-medium text-label">Solar Noon</p>
+                      <p className="text-sm font-mono text-value">{formatSunTime(exifData.sun.solarNoon)}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-gray-600">Day Length</p>
-                      <p className="text-sm font-mono text-gray-900">{Math.floor(exifData.sun.dayLength / 60)}h {exifData.sun.dayLength % 60}m</p>
+                      <p className="text-xs font-medium text-label">Day Length</p>
+                      <p className="text-sm font-mono text-value">{Math.floor(exifData.sun.dayLength / 60)}h {exifData.sun.dayLength % 60}m</p>
                     </div>
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-gray-600">Sun Position</p>
-                    <p className="text-sm text-gray-900">{formatSunPosition(exifData.sun.sunPosition.azimuth, exifData.sun.sunPosition.altitude)}</p>
+                    <p className="text-xs font-medium text-label">Sun Position</p>
+                    <p className="text-sm text-value">{formatSunPosition(exifData.sun.sunPosition.azimuth, exifData.sun.sunPosition.altitude)}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className={`w-3 h-3 rounded-full ${exifData.sun.isDaytime ? 'bg-yellow-400' : 'bg-blue-400'}`}></div>
-                    <p className="text-sm text-gray-900">
+                    <p className="text-sm text-value">
                       {exifData.sun.isDaytime ? 'Daytime' : 'Nighttime'}
                     </p>
                   </div>
@@ -375,20 +375,20 @@ export function EXIFDisplay({ exifData, filters, title, isGeocoded, onTitleChang
                 <div className="grid grid-cols-2 gap-3">
                   {exifData.image.width && exifData.image.height && (
                     <div>
-                      <p className="text-xs font-medium text-gray-600">Dimensions</p>
-                      <p className="text-sm font-mono text-gray-900">{exifData.image.width} × {exifData.image.height}</p>
+                      <p className="text-xs font-medium text-label">Dimensions</p>
+                      <p className="text-sm font-mono text-value">{exifData.image.width} × {exifData.image.height}</p>
                     </div>
                   )}
                   {exifData.image.xResolution && exifData.image.yResolution && (
                     <div>
-                      <p className="text-xs font-medium text-gray-600">Resolution</p>
-                      <p className="text-sm font-mono text-gray-900">{exifData.image.xResolution} × {exifData.image.yResolution} DPI</p>
+                      <p className="text-xs font-medium text-label">Resolution</p>
+                      <p className="text-sm font-mono text-value">{exifData.image.xResolution} × {exifData.image.yResolution} DPI</p>
                     </div>
                   )}
                   {exifData.image.orientation && (
                     <div>
-                      <p className="text-xs font-medium text-gray-600">Orientation</p>
-                      <p className="text-sm text-gray-900">{exifData.image.orientation}</p>
+                      <p className="text-xs font-medium text-label">Orientation</p>
+                      <p className="text-sm text-value">{exifData.image.orientation}</p>
                     </div>
                   )}
                 </div>
