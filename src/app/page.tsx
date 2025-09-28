@@ -7,9 +7,10 @@ import { EXIFDisplay } from '@/components/EXIFDisplay'
 import { DataFilter, DataFilter as DataFilterType } from '@/components/DataFilter'
 import { EXIFData } from '@/lib/exif'
 import { reverseGeocode, generateFallbackTitle } from '@/lib/geocoding'
+import { exportToPDF } from '@/lib/pdfExport'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Camera, Trash2, Plus } from 'lucide-react'
+import { Camera, Trash2, Plus, Download } from 'lucide-react'
 
 interface PhotoData {
   exifData: EXIFData
@@ -117,6 +118,15 @@ export default function Home() {
     ))
   }
 
+  const handleExportPDF = async () => {
+    try {
+      await exportToPDF(photos, filters)
+    } catch (error) {
+      console.error('Error exporting PDF:', error)
+      alert('Error exporting PDF. Please try again.')
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
@@ -206,6 +216,13 @@ export default function Home() {
               >
                 <Plus className="h-4 w-4" />
                 Add More Photos
+              </Button>
+              <Button
+                onClick={handleExportPDF}
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+              >
+                <Download className="h-4 w-4" />
+                Export PDF
               </Button>
               <Button
                 variant="destructive"
