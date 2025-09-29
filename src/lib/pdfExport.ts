@@ -55,15 +55,85 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
   const pdf = new jsPDF('p', 'mm', 'a4')
   const pageWidth = pdf.internal.pageSize.getWidth()
   const pageHeight = pdf.internal.pageSize.getHeight()
-  const margin = 15
+  const margin = 10
   const contentWidth = pageWidth - (margin * 2)
   
   let currentY = margin
-  const lineHeight = 6
-  const sectionSpacing = 8
-  const imageMaxWidth = 45 // 25% of page width (180mm * 0.25 = 45mm)
-  const imageMaxHeight = 80 // Increased height to fill column better
-  const dataColumnWidth = 135 // 75% of page width (180mm * 0.75 = 135mm)
+  
+  // Global styling configuration
+  const styles = {
+    // Font sizes
+    title: 20,
+    sectionHeader: 12,
+    dataLabel: 9,
+    dataValue: 9,
+    
+    // Spacing
+    lineHeight: 4.5,
+    sectionSpacing: 6,
+    dataRowSpacing: 2,
+    betweenSections: 2,
+    photoSpacing: 2,
+    
+    // Layout
+    dataRowHeight: 5,
+    sectionHeaderHeight: 5
+  }
+  
+  const lineHeight = styles.lineHeight
+  const sectionSpacing = 6
+  const imageMaxWidth = 50
+  const imageMaxHeight = 50
+  const dataColumnWidth = 150
+  
+  // Global layout state
+  let currentPage = 1
+  const maxContentHeight = pageHeight - margin * 2
+
+  // Global layout management system
+  const layoutManager = {
+    // Calculate available space on current page
+    getAvailableSpace: () => pageHeight - currentY - margin,
+    
+    // Check if content fits on current page - ULTRA aggressive
+    canFit: (requiredHeight: number) => {
+      // Add maximum tolerance - allow content to get very close to the bottom
+      const tolerance = 20 // Allow 20mm closer to bottom
+      return currentY + requiredHeight <= pageHeight - margin + tolerance
+    },
+    
+    // Add new page and reset position
+    addPage: () => {
+      pdf.addPage()
+      currentY = margin
+      currentPage++
+    },
+    
+    // Smart page break - only when absolutely necessary
+    ensureSpace: (requiredHeight: number) => {
+      if (!layoutManager.canFit(requiredHeight)) {
+        layoutManager.addPage()
+      }
+    },
+    
+    // Calculate content height for a photo - ULTRA aggressive
+    calculatePhotoHeight: (photo: PhotoData) => {
+      let height = 15 // Photo title (ultra reduced)
+      height += Math.min(imageMaxHeight, 35) // Image height (ultra reduced)
+      height += 3 // Spacing (ultra reduced)
+      
+      // Add ultra-minimal height for enabled sections
+      if (filters.location && photo.exifData.gps) height += 18
+      if (filters.dateTime && (photo.exifData.dateTime || photo.exifData.dateTimeOriginal)) height += 12
+      if (filters.camera && (photo.exifData.make || photo.exifData.model)) height += 12
+      if (filters.exposure && photo.exifData.exposure) height += 18
+      if (filters.settings && photo.exifData.camera) height += 12
+      if (filters.sun && photo.exifData.sun) height += 25
+      if (filters.image && photo.exifData.image) height += 12
+      
+      return height + 2 // Ultra minimal buffer
+    }
+  }
 
   // Helper function to add text with word wrapping and page overflow handling
   const addText = (text: string, x: number, y: number, maxWidth?: number, options: Record<string, unknown> = {}) => {
@@ -83,14 +153,13 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
     return y + textHeight
   }
 
-  // Helper function to add a section header with page overflow handling
+  // Global function to add section headers with consistent styling
   const addSectionHeader = (title: string, y: number) => {
-    // Check if we need a new page for the section header
-    const estimatedHeight = 15 // Approximate height for section header
+    const estimatedHeight = 15
     if (y + estimatedHeight > pageHeight - margin) {
       pdf.addPage()
       const newY = margin
-      pdf.setFontSize(14)
+      pdf.setFontSize(styles.title)
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(0, 0, 0)
       pdf.text(title, margin, newY)
@@ -100,7 +169,7 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
       return newY + sectionSpacing
     }
 
-    pdf.setFontSize(14)
+    pdf.setFontSize(styles.title)
     pdf.setFont('helvetica', 'bold')
     pdf.setTextColor(0, 0, 0)
     pdf.text(title, margin, y)
@@ -120,14 +189,13 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
     return false
   }
 
-  // Helper function to add a data row with page overflow handling
+  // Global function to add data rows with consistent styling
   const addDataRow = (label: string, value: string, x: number, y: number, isLink: boolean = false) => {
-    // Check if we need a new page before adding content
-    const estimatedHeight = 8 // Approximate height for a data row
+    const estimatedHeight = styles.dataRowHeight
     if (y + estimatedHeight > pageHeight - margin) {
       pdf.addPage()
       const newY = margin
-      pdf.setFontSize(10)
+      pdf.setFontSize(styles.dataLabel)
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(0, 0, 0)
       addText(`${label}:`, x, newY, dataColumnWidth)
@@ -139,10 +207,10 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
         pdf.setTextColor(0, 0, 0)
       }
       const finalY = addText(value, x + 25, newY, dataColumnWidth - 25)
-      return finalY + 2
+      return finalY + styles.dataRowSpacing
     }
 
-    pdf.setFontSize(10)
+    pdf.setFontSize(styles.dataLabel)
     pdf.setFont('helvetica', 'bold')
     pdf.setTextColor(0, 0, 0)
     addText(`${label}:`, x, y, dataColumnWidth)
@@ -154,30 +222,16 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
       pdf.setTextColor(0, 0, 0)
     }
     const newY = addText(value, x + 25, y, dataColumnWidth - 25)
-    return newY + 2
+    return newY + styles.dataRowSpacing
   }
 
-  // Helper function to add a section with proper page overflow handling
-  const addSection = (title: string, x: number, y: number, content: () => number) => {
-    // Check if we need a new page for the section
-    const estimatedHeight = 20 // Approximate height for section header + some content
-    if (y + estimatedHeight > pageHeight - margin) {
-      pdf.addPage()
-      const newY = margin
-      pdf.setFontSize(12)
-      pdf.setFont('helvetica', 'bold')
-      pdf.setTextColor(0, 0, 0)
-      pdf.text(title, x, newY)
-      const finalY = newY + 6
-      return content()
-    }
-
-    pdf.setFontSize(12)
+  // Global function to add data section headers with consistent styling
+  const addDataSectionHeader = (title: string, x: number, y: number) => {
+    pdf.setFontSize(styles.sectionHeader)
     pdf.setFont('helvetica', 'bold')
     pdf.setTextColor(0, 0, 0)
     pdf.text(title, x, y)
-    const contentY = y + 6
-    return content()
+    return y + styles.sectionHeaderHeight
   }
 
   // Helper function to add an image to the PDF
@@ -211,16 +265,22 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
             }
             
             // Calculate PDF dimensions maintaining aspect ratio
-            const mmWidth = maxWidth // Use the maxWidth directly (45mm)
-            const mmHeight = (finalHeight * maxWidth) / finalWidth // Calculate height maintaining aspect ratio
+            const aspectRatio = finalWidth / finalHeight
+            let pdfWidth = maxWidth
+            let pdfHeight = maxWidth / aspectRatio
             
-            // Only scale down if height exceeds maximum
-            let pdfWidth = mmWidth
-            let pdfHeight = mmHeight
-            if (mmHeight > maxHeight) {
-              const heightRatio = maxHeight / mmHeight
+            // If height is too tall, scale down by height
+            if (pdfHeight > maxHeight) {
+              const heightRatio = maxHeight / pdfHeight
               pdfHeight = maxHeight
-              pdfWidth = mmWidth * heightRatio
+              pdfWidth = pdfWidth * heightRatio
+            }
+            
+            // If width is too wide, scale down by width
+            if (pdfWidth > maxWidth) {
+              const widthRatio = maxWidth / pdfWidth
+              pdfWidth = maxWidth
+              pdfHeight = pdfHeight * widthRatio
             }
             
             // Add image to PDF
@@ -260,27 +320,18 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
     currentY += 15
   }
 
+  // Process each photo with smart layout management
   for (let i = 0; i < photos.length; i++) {
     const photo = photos[i]
     
-    // Calculate estimated content height for this photo
-    let estimatedContentHeight = 20 // Photo title
-    estimatedContentHeight += 80 // Image height
-    estimatedContentHeight += 10 // Spacing
+    // Calculate the actual space needed for this photo
+    const photoHeight = layoutManager.calculatePhotoHeight(photo)
     
-    // Add estimated height for each enabled section
-    if (filters.location && photo.exifData.gps) estimatedContentHeight += 40
-    if (filters.dateTime && (photo.exifData.dateTime || photo.exifData.dateTimeOriginal)) estimatedContentHeight += 30
-    if (filters.camera && (photo.exifData.make || photo.exifData.model)) estimatedContentHeight += 30
-    if (filters.exposure && photo.exifData.exposure) estimatedContentHeight += 40
-    if (filters.settings && photo.exifData.camera) estimatedContentHeight += 30
-    if (filters.sun && photo.exifData.sun) estimatedContentHeight += 50
-    if (filters.image && photo.exifData.image) estimatedContentHeight += 30
-    
-    // If content won't fit on current page, start fresh on new page
-    if (currentY + estimatedContentHeight > pageHeight - margin) {
-      pdf.addPage()
-      currentY = margin
+    // Be very aggressive about fitting content - only break page when absolutely necessary
+    // Allow content to flow very close to the bottom of the page
+    if (!layoutManager.canFit(photoHeight)) {
+      // Only add new page if we really can't fit
+      layoutManager.addPage()
     }
 
     // Photo title
@@ -298,28 +349,18 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
       photo.exifData.image?.orientation
     )
     
-    // Start data on the right side of the image with proper spacing
+    // Start data on the right side of the image, aligned with the visual top of the image
     const dataStartX = margin + imageMaxWidth + 10
-    let dataY = imageY
+    let dataY = imageY + 2 // Slight offset to align with the visual top of the image
 
-    // Photo title section (always visible)
-    dataY = addDataRow('Title', photo.title, dataStartX, dataY)
-    dataY += 5
+    // Skip the duplicate title since we already have it as a header above
+    // dataY = addDataRow('Title', photo.title, dataStartX, dataY)
+    // dataY += 5
 
         // Location section
         if (filters.location && photo.exifData.gps) {
-          // Check if we have enough space for the entire location section
-          const locationSectionHeight = 50 // Estimated height for location section
-          if (dataY + locationSectionHeight > pageHeight - margin) {
-            pdf.addPage()
-            dataY = margin
-          }
           
-          pdf.setFontSize(12)
-          pdf.setFont('helvetica', 'bold')
-          pdf.setTextColor(0, 0, 0)
-          pdf.text('Location', dataStartX, dataY)
-          dataY += 6
+          dataY = addDataSectionHeader('Location', dataStartX, dataY)
           
           // Show address if this photo is geocoded
           if (photo.isGeocoded) {
@@ -331,7 +372,7 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
             dataY = addDataRow('Altitude', `${photo.exifData.gps.altitude.toFixed(2)} m`, dataStartX, dataY)
           }
           // Add Google Maps link as clickable text
-          pdf.setFontSize(10)
+          pdf.setFontSize(9)
           pdf.setFont('helvetica', 'bold')
           pdf.setTextColor(0, 0, 0)
           pdf.text('Google Maps:', dataStartX, dataY)
@@ -346,23 +387,13 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
           // Add the actual link
           pdf.link(linkX, dataY - 2, 30, 4, { url: mapsLink })
           dataY += 4
-          dataY += 5
+          dataY += styles.betweenSections
         }
 
     // Date/Time section
     if (filters.dateTime && (photo.exifData.dateTime || photo.exifData.dateTimeOriginal || photo.exifData.dateTimeDigitized)) {
-      // Check if we have enough space for the entire date/time section
-      const dateTimeSectionHeight = 30
-      if (dataY + dateTimeSectionHeight > pageHeight - margin) {
-        pdf.addPage()
-        dataY = margin
-      }
       
-      pdf.setFontSize(12)
-      pdf.setFont('helvetica', 'bold')
-      pdf.setTextColor(0, 0, 0)
-      pdf.text('Date & Time', dataStartX, dataY)
-      dataY += 6
+      dataY = addDataSectionHeader('Date & Time', dataStartX, dataY)
       
       if (photo.exifData.dateTimeOriginal) {
         dataY = addDataRow('Original Date', formatDate(new Date(photo.exifData.dateTimeOriginal)), dataStartX, dataY)
@@ -370,23 +401,13 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
       if (photo.exifData.dateTime) {
         dataY = addDataRow('File Date', formatDate(new Date(photo.exifData.dateTime)), dataStartX, dataY)
       }
-      dataY += 5
+      dataY += styles.betweenSections
     }
 
     // Camera section
     if (filters.camera && (photo.exifData.make || photo.exifData.model || photo.exifData.software)) {
-      // Check if we have enough space for the entire camera section
-      const cameraSectionHeight = 30
-      if (dataY + cameraSectionHeight > pageHeight - margin) {
-        pdf.addPage()
-        dataY = margin
-      }
       
-      pdf.setFontSize(12)
-      pdf.setFont('helvetica', 'bold')
-      pdf.setTextColor(0, 0, 0)
-      pdf.text('Camera', dataStartX, dataY)
-      dataY += 6
+      dataY = addDataSectionHeader('Camera', dataStartX, dataY)
       
       if (photo.exifData.make) {
         dataY = addDataRow('Make', photo.exifData.make, dataStartX, dataY)
@@ -397,23 +418,13 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
       if (photo.exifData.software) {
         dataY = addDataRow('Software', photo.exifData.software, dataStartX, dataY)
       }
-      dataY += 5
+      dataY += styles.betweenSections
     }
 
     // Exposure section
     if (filters.exposure && photo.exifData.exposure) {
-      // Check if we have enough space for the entire exposure section
-      const exposureSectionHeight = 40
-      if (dataY + exposureSectionHeight > pageHeight - margin) {
-        pdf.addPage()
-        dataY = margin
-      }
       
-      pdf.setFontSize(12)
-      pdf.setFont('helvetica', 'bold')
-      pdf.setTextColor(0, 0, 0)
-      pdf.text('Exposure', dataStartX, dataY)
-      dataY += 6
+      dataY = addDataSectionHeader('Exposure', dataStartX, dataY)
       
       if (photo.exifData.exposure.aperture) {
         dataY = addDataRow('Aperture', `f/${photo.exifData.exposure.aperture.toFixed(1)}`, dataStartX, dataY)
@@ -427,23 +438,13 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
       if (photo.exifData.exposure.fNumber) {
         dataY = addDataRow('F-Number', `f/${photo.exifData.exposure.fNumber.toFixed(1)}`, dataStartX, dataY)
       }
-      dataY += 5
+      dataY += styles.betweenSections
     }
 
     // Settings section
     if (filters.settings && photo.exifData.camera) {
-      // Check if we have enough space for the entire settings section
-      const settingsSectionHeight = 30
-      if (dataY + settingsSectionHeight > pageHeight - margin) {
-        pdf.addPage()
-        dataY = margin
-      }
       
-      pdf.setFontSize(12)
-      pdf.setFont('helvetica', 'bold')
-      pdf.setTextColor(0, 0, 0)
-      pdf.text('Settings', dataStartX, dataY)
-      dataY += 6
+      dataY = addDataSectionHeader('Settings', dataStartX, dataY)
       
       if (photo.exifData.camera.focalLength) {
         dataY = addDataRow('Focal Length', `${photo.exifData.camera.focalLength.toFixed(0)}mm`, dataStartX, dataY)
@@ -457,23 +458,13 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
       if (photo.exifData.camera.meteringMode !== undefined) {
         dataY = addDataRow('Metering Mode', photo.exifData.camera.meteringMode.toString(), dataStartX, dataY)
       }
-      dataY += 5
+      dataY += styles.betweenSections
     }
 
     // Sun Data section
     if (filters.sun && photo.exifData.sun) {
-      // Check if we have enough space for the entire sun data section
-      const sunDataSectionHeight = 50
-      if (dataY + sunDataSectionHeight > pageHeight - margin) {
-        pdf.addPage()
-        dataY = margin
-      }
       
-      pdf.setFontSize(12)
-      pdf.setFont('helvetica', 'bold')
-      pdf.setTextColor(0, 0, 0)
-      pdf.text('Sun Data', dataStartX, dataY)
-      dataY += 6
+      dataY = addDataSectionHeader('Sun Data', dataStartX, dataY)
       
       dataY = addDataRow('Sunrise', formatSunTime(photo.exifData.sun.sunrise), dataStartX, dataY)
       dataY = addDataRow('Sunset', formatSunTime(photo.exifData.sun.sunset), dataStartX, dataY)
@@ -481,23 +472,13 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
       dataY = addDataRow('Day Length', `${Math.floor(photo.exifData.sun.dayLength / 60)}h ${photo.exifData.sun.dayLength % 60}m`, dataStartX, dataY)
       dataY = addDataRow('Sun Position', formatSunPosition(photo.exifData.sun.sunPosition.azimuth, photo.exifData.sun.sunPosition.altitude), dataStartX, dataY)
       dataY = addDataRow('Time of Day', photo.exifData.sun.isDaytime ? 'Daytime' : 'Nighttime', dataStartX, dataY)
-      dataY += 5
+      dataY += styles.betweenSections
     }
 
     // Image section
     if (filters.image && photo.exifData.image) {
-      // Check if we have enough space for the entire image section
-      const imageSectionHeight = 30
-      if (dataY + imageSectionHeight > pageHeight - margin) {
-        pdf.addPage()
-        dataY = margin
-      }
       
-      pdf.setFontSize(12)
-      pdf.setFont('helvetica', 'bold')
-      pdf.setTextColor(0, 0, 0)
-      pdf.text('Image', dataStartX, dataY)
-      dataY += 6
+      dataY = addDataSectionHeader('Image', dataStartX, dataY)
       
       if (photo.exifData.image.width && photo.exifData.image.height) {
         dataY = addDataRow('Dimensions', `${photo.exifData.image.width} x ${photo.exifData.image.height}`, dataStartX, dataY)
@@ -508,11 +489,12 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
       if (photo.exifData.image.orientation) {
         dataY = addDataRow('Orientation', photo.exifData.image.orientation.toString(), dataStartX, dataY)
       }
-      dataY += 5
+      dataY += styles.betweenSections
     }
 
     // Move to the next line after the image and data
-    currentY = Math.max(imageBottomY, dataY) + 10
+    // Use global spacing between photos
+    currentY = Math.max(imageBottomY, dataY) + styles.photoSpacing
   }
 
   // Generate PDF blob and create zip file
