@@ -234,6 +234,54 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
     return y + styles.sectionHeaderHeight
   }
 
+  // Helper function to compress and resize image for PDF
+  const compressImageForPDF = async (imageUrl: string, maxWidth: number = 800, quality: number = 0.6): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      
+      img.onload = () => {
+        try {
+          // Calculate new dimensions maintaining aspect ratio
+          let width = img.width
+          let height = img.height
+          
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width
+            width = maxWidth
+          }
+          
+          // Create canvas and resize
+          const canvas = document.createElement('canvas')
+          canvas.width = width
+          canvas.height = height
+          
+          const ctx = canvas.getContext('2d')
+          if (!ctx) {
+            resolve(imageUrl) // Fallback to original
+            return
+          }
+          
+          // Draw resized image
+          ctx.drawImage(img, 0, 0, width, height)
+          
+          // Convert to compressed JPEG
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', quality)
+          resolve(compressedDataUrl)
+        } catch (error) {
+          console.error('Error compressing image:', error)
+          resolve(imageUrl) // Fallback to original
+        }
+      }
+      
+      img.onerror = () => {
+        resolve(imageUrl) // Fallback to original
+      }
+      
+      img.src = imageUrl
+    })
+  }
+
   // Helper function to add an image to the PDF
   const addImage = async (imageUrl: string, x: number, y: number, maxWidth: number, maxHeight: number, orientation?: number) => {
     try {
@@ -264,6 +312,11 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
               }
             }
             
+            // Compress image before adding to PDF (reduces file size significantly)
+            console.log('Compressing image for PDF...')
+            finalImageUrl = await compressImageForPDF(finalImageUrl, 800, 0.6)
+            console.log('Image compressed for PDF')
+            
             // Calculate PDF dimensions maintaining aspect ratio
             const aspectRatio = finalWidth / finalHeight
             let pdfWidth = maxWidth
@@ -283,7 +336,7 @@ export async function exportToPDF(photos: PhotoData[], filters: DataFilter, cust
               pdfHeight = pdfHeight * widthRatio
             }
             
-            // Add image to PDF
+            // Add compressed image to PDF
             pdf.addImage(finalImageUrl, 'JPEG', x, y, pdfWidth, pdfHeight)
             resolve(y + pdfHeight + 5)
           } catch (error) {
